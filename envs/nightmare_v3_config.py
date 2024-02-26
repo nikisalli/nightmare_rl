@@ -1,17 +1,18 @@
 from envs.base_config import BaseConfig
+import numpy as np
 
 class NightmareV3Config(BaseConfig):
     device = 'cpu'
-    rl_device = 'cpu'
+    rl_device = 'cuda'
 
     class env:
         dt = 0.002
         model_path = 'models/nightmare_v3/mjmodel.xml'
-        num_envs = 1024
+        num_envs = 2048
         num_obs = 66
         num_privileged_obs = 0
         num_actions = 18
-        episode_length_s = 20
+        episode_length_s = 10
         send_timeouts = True
         feet_names = ['leg_1_foot', 'leg_2_foot', 'leg_3_foot', 'leg_4_foot', 'leg_5_foot', 'leg_6_foot']
         body_name = 'base_link'
@@ -32,9 +33,14 @@ class NightmareV3Config(BaseConfig):
     class control:
         p_gain = 10
         d_gain = 0.05
-        default_pos = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        default_pos = [0, np.pi / 5, 0, 
+                       0, np.pi / 5, 0,
+                       0, np.pi / 5, 0,
+                       0, np.pi / 5, 0,
+                       0, np.pi / 5, 0,
+                       0, np.pi / 5, 0]
         decimation = 4
-        action_scale = 0.2
+        action_scale = 0.05
 
     class noise:
         add_noise = False
@@ -73,7 +79,7 @@ class NightmareV3Config(BaseConfig):
             ang_vel_xy = -0.05
             orientation = -0.
             torques = -0.00001
-            dof_vel = -0.1
+            dof_vel = -0.005
             dof_acc = -2.5e-7
             base_height = -10.0
             feet_air_time =  0.0 # 1.0
@@ -117,7 +123,7 @@ class NightmareV3ConfigPPO(BaseConfig):
     class runner:
         policy_class_name = 'ActorCritic'
         algorithm_class_name = 'PPO'
-        num_steps_per_env = 24 # per iteration
+        num_steps_per_env = 62 # per iteration
         max_iterations = 1500 # number of policy updates
 
         # logging

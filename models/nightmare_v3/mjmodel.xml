@@ -24,7 +24,7 @@
   </asset>
   <worldbody>
     <geom type="plane" size="10 10 10" rgba="0.5 0.5 0.5 1" pos="0 0 0" name="floor"/>
-    <body name="base_link" pos="0 0 0.3">
+    <body name="base_link" pos="0 0 0.15">
       <geom quat="0.707107 0 0 0.707107" type="mesh" rgba="0.7 0.7 0.7 1" mesh="base_link" name="base_link"/>
       <inertial pos="0 0 0" quat="1 0 0 0" mass="0.6" diaginertia="0.0001 0.0001 0.0001"/>
       <joint type="free"/>
@@ -127,23 +127,23 @@
     </body>
   </worldbody>
   <actuator>
-    <motor gear="1" joint="leg1coxa"/>
-    <motor gear="1" joint="leg1femur"/>
-    <motor gear="1" joint="leg1tibia"/>
-    <motor gear="1" joint="leg2coxa"/>
-    <motor gear="1" joint="leg2femur"/>
-    <motor gear="1" joint="leg2tibia"/>
-    <motor gear="1" joint="leg3coxa"/>
-    <motor gear="1" joint="leg3femur"/>
-    <motor gear="1" joint="leg3tibia"/>
-    <motor gear="1" joint="leg4coxa"/>
-    <motor gear="1" joint="leg4femur"/>
-    <motor gear="1" joint="leg4tibia"/>
-    <motor gear="1" joint="leg5coxa"/>
-    <motor gear="1" joint="leg5femur"/>
-    <motor gear="1" joint="leg5tibia"/>
-    <motor gear="1" joint="leg6coxa"/>
-    <motor gear="1" joint="leg6femur"/>
-    <motor gear="1" joint="leg6tibia"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg1coxa" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg1femur" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg1tibia" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg2coxa" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg2femur" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg2tibia" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg3coxa" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg3femur" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg3tibia" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg4coxa" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg4femur" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg4tibia" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg5coxa" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg5femur" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg5tibia" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg6coxa" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg6femur" kp="10" kv="0.05"/>
+    <position ctrllimited="true" ctrlrange="-1 1" joint="leg6tibia" kp="10" kv="0.05"/>
   </actuator>
 </mujoco>

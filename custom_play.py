@@ -29,6 +29,8 @@ listener.start()
 model = mj.MjModel.from_xml_path("models/nightmare_v3/mjmodel.xml")
 data = mj.MjData(model)
 
+model.opt.timestep = 0.0025
+
 p_gain = 10
 d_gain = 0.05
 max_speed = 0.1
@@ -65,11 +67,7 @@ with mj.viewer.launch_passive(model, data) as viewer:
     while viewer.is_running():
         set_time_s(data.time)
         actions = engine.update(lin_speed, ang_speed, 'awake', 'walk')
-        data.ctrl[:] = p_gain * (actions - data.qpos[-18:]) - d_gain * data.qvel[-18:]
-        for contact in data.contact:
-            # print(data.efc_force[contact.efc_address])
-            # print(contact)
-            pass
+        data.ctrl[:] = actions
 
         # fig.canvas.restore_region(axbackground)
         # xs = np.roll(xs, -1, axis=0)
@@ -90,7 +88,7 @@ with mj.viewer.launch_passive(model, data) as viewer:
 
         mj.mj_step(model, data)
 
-        viewer.sync()
+        # viewer.sync()
 
         accum += 1
         if accum > 1000:

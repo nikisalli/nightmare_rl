@@ -4,6 +4,7 @@ from envs.nightmare_v3_config import NightmareV3Config
 from envs.helpers import class_to_dict
 import numpy as np
 
+# print(mj.mj_step_threaded)
 import torch
 
 def quaternion_raw_multiply(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
@@ -135,7 +136,8 @@ class NightmareV3Env():
         self.max_episode_length_s = self.cfg.env.episode_length_s
         self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
 
-        self.default_dof_pos = torch.zeros(self.num_dof, dtype=torch.float, device=self.cfg.device, requires_grad=False)
+        self.default_dof_pos = torch.tensor(self.cfg.control.default_pos, dtype=torch.float, device=self.cfg.device, requires_grad=False)
+        self.default_dof_pos_np = self.default_dof_pos.numpy()
 
         self.extras = {}
 
@@ -186,16 +188,21 @@ class NightmareV3Env():
         self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.cfg.device)
         # step physics and render each frame
         self.render()
-        
-        for _ in range(self.cfg.control.decimation):
-            for env_id in range(self.num_envs):
-                self.prev_data[env_id] = self.data[env_id]
 
-                # Calculate initial control without speed limit
-                self.data[env_id].ctrl[:] = self.cfg.control.p_gain * ((self.actions[env_id] * self.cfg.control.action_scale) - self.data[env_id].qpos[-18:]) - self.cfg.control.d_gain * self.data[env_id].qvel[-18:]
+        prev_dof_vel = torch.tensor(np.array([self.prev_data[env_id].qvel[-18:] for env_id in range(self.num_envs)]), dtype=torch.float, device=self.cfg.device, requires_grad=False)
 
-                mj.mj_step(self.model, self.data[env_id])
+        temp = np.array(self.actions) * self.cfg.control.action_scale - self.default_dof_pos_np
+        self.prev_data = self.data.copy()
 
+        ### single thread
+        # for env_id in range(self.num_envs):
+        #     self.data[env_id].ctrl = temp[env_id]
+        #     mj.mj_step(self.model, self.data[env_id], self.cfg.control.decimation)
+
+        ### multi thread
+        for env_id in range(self.num_envs):
+            self.data[env_id].ctrl = temp[env_id]
+        mj.mj_step_multithreaded(self.model, self.data, self.cfg.control.decimation, 12)
 
         self.episode_length_buf += 1
         self.common_step_counter += 1
@@ -215,18 +222,16 @@ class NightmareV3Env():
         self.dof_vel = torch.tensor(np.array([self.data[env_id].qvel[-18:] for env_id in range(self.num_envs)]), dtype=torch.float, device=self.cfg.device, requires_grad=False)
         self.torques = torch.tensor(np.array([self.data[env_id].qfrc_applied[-18:] for env_id in range(self.num_envs)]), dtype=torch.float, device=self.cfg.device, requires_grad=False)
         
-        prev_dof_vel = torch.tensor(np.array([self.prev_data[env_id].qvel[-18:] for env_id in range(self.num_envs)]), dtype=torch.float, device=self.cfg.device, requires_grad=False)
-        
         self.dof_acc = (self.dof_vel - prev_dof_vel) / self.dt
 
         self.base_heights = torch.tensor(np.array([self.data[env_id].xipos[1][2] for env_id in range(self.num_envs)]), dtype=torch.float, device=self.cfg.device, requires_grad=False)
 
         # update contact forces
-        self.contact_forces = torch.zeros_like(self.contact_forces)
-        for env_id in range(self.num_envs):
-            for contact in self.data[env_id].contact:
-                self.contact_forces[env_id, contact.geom1] = self.data[env_id].efc_force[contact.efc_address]
-                self.contact_forces[env_id, contact.geom2] = self.data[env_id].efc_force[contact.efc_address]
+        # self.contact_forces = torch.zeros_like(self.contact_forces)
+        # for env_id in range(self.num_envs):
+        #     for contact in self.data[env_id].contact:
+        #         self.contact_forces[env_id, contact.geom1] = self.data[env_id].efc_force[contact.efc_address]
+        #         self.contact_forces[env_id, contact.geom2] = self.data[env_id].efc_force[contact.efc_address]
 
         env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt)==0).nonzero(as_tuple=False).flatten()
         self._resample_commands(env_ids)
@@ -305,14 +310,10 @@ class NightmareV3Env():
         
         # reset robot states
         for env_id in env_ids:
-            self.data[env_id].qpos[:3] = 0.
-            self.data[env_id].qvel[:3] = 0.
-            self.data[env_id].qpos[-18:] = self.cfg.control.default_pos
-            self.data[env_id].qvel[-18:] = 0.
-            self.prev_data[env_id].qpos[:3] = 0.
-            self.prev_data[env_id].qvel[:3] = 0.
-            self.prev_data[env_id].qpos[-18:] = self.cfg.control.default_pos
-            self.prev_data[env_id].qvel[-18:] = 0.
+            self.data[env_id].qpos = self.model.qpos0
+            self.data[env_id].qvel = 0
+            self.prev_data[env_id].qpos = self.model.qpos0
+            self.prev_data[env_id].qvel = 0.
 
         self._resample_commands(env_ids)
 
@@ -402,7 +403,7 @@ class NightmareV3Env():
         
     def _reward_stand_still(self):
         # Penalize motion at zero commands
-        return torch.sum(torch.abs(self.dof_pos - self.default_dof_pos), dim=1) * (torch.norm(self.commands[:, :2], dim=1) < 0.1)
+        return torch.sum(torch.abs(self.dof_pos - self.default_dof_pos), dim=1) * (torch.norm(self.commands[:, :2], dim=1) < 0.01)
 
     def _reward_feet_contact_forces(self):
         # penalize high contact forces
