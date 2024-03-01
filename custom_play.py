@@ -3,6 +3,7 @@ import mujoco.viewer as mjv
 from nikengine.engine import EngineNode, set_time_s, config
 from pynput.keyboard import Key, Listener, Controller, KeyCode
 import time
+import pickle
 
 # Dictionary to store the state of the keys
 lin = 0.05
@@ -40,6 +41,10 @@ print("time step: ", model.opt.timestep)
 accum = 0
 prev = time.time()
 
+import numpy as np
+
+qposs = []
+
 with mj.viewer.launch_passive(model, data) as viewer:
     viewer.sync()
     while viewer.is_running():
@@ -49,8 +54,28 @@ with mj.viewer.launch_passive(model, data) as viewer:
 
         mj.mj_step(model, data)
 
+        vec_pointing_down = np.array([0, 0, -1])
+        base_quat = data.qpos[3:7]
+        gravity = np.array([0, 0, -9.81])
+        new_vec = np.zeros(3)
+        mj.mju_rotVecQuat(new_vec, vec_pointing_down, base_quat)
+        # print angle between vec_pointing_down and new_vec
+        test_vecs = np.array([[0, 0, -1], [0, 0, 1], [0, 1, 0], [1, 0, 0]])
+        print(test_vecs)
+        # test_vecs = np.array([0, 0, 1])
+        print(np.arccos(np.dot(test_vecs, vec_pointing_down) / (np.linalg.norm(test_vecs, axis=1) * np.linalg.norm(vec_pointing_down))))
+
         # print sensor data
         print("sensor data: ", data.sensordata)
+
+        qposs.append((data.time, np.array(data.qpos.copy()), np.array(data.qvel.copy()), np.array(data.act.copy())))
+
+        print(len(qposs))
+
+        if len(qposs) > 10000:
+            with open('data.pkl', 'wb') as f:
+                pickle.dump(qposs, f)
+            break
 
         viewer.sync()
 

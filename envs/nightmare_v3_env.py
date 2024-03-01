@@ -4,13 +4,17 @@ from envs.nightmare_v3_config import NightmareV3Config
 from envs.helpers import class_to_dict
 import numpy as np
 import time
+import threading
+import pickle
+import os
 
 # print(mj.mj_step_threaded)
 import torch
 
 class NightmareV3Env():
-    def __init__(self, cfg: NightmareV3Config):
+    def __init__(self, cfg: NightmareV3Config, log_dir="/tmp/nightmare_v3/logs"):
         self.cfg = cfg
+        self.log_dir = log_dir
 
         self.num_envs = self.cfg.env.num_envs
         self.num_obs = self.cfg.env.num_obs
@@ -26,18 +30,19 @@ class NightmareV3Env():
 
         self.gravity_vec = np.array([0., 0., -9.81])
 
-        self.termination_contact_geom_indices = [mj.mj_name2id(self.model, mj.mjtObj.mjOBJ_GEOM, name) for name in self.cfg.env.feet_names]
-        self.feet_geom_indices = [mj.mj_name2id(self.model, mj.mjtObj.mjOBJ_GEOM, name) for name in self.cfg.env.feet_names]
-        self.floor_geom_index = mj.mj_name2id(self.model, mj.mjtObj.mjOBJ_GEOM, self.cfg.env.floor_name)
-        self.body_geom_index = mj.mj_name2id(self.model, mj.mjtObj.mjOBJ_GEOM, self.cfg.env.body_name)
-
+        # self.termination_contact_geom_indices = [mj.mj_name2id(self.model, mj.mjtObj.mjOBJ_GEOM, name) for name in self.cfg.env.termination_names]
+        # self.floor_geom_index = mj.mj_name2id(self.model, mj.mjtObj.mjOBJ_GEOM, self.cfg.env.floor_name)
+        # self.body_geom_index = mj.mj_name2id(self.model, mj.mjtObj.mjOBJ_GEOM, self.cfg.env.body_name)
         self.body_index = mj.mj_name2id(self.model, mj.mjtObj.mjOBJ_BODY, self.cfg.env.body_name)
 
+        # print("Termination contact geom indices: ", self.termination_contact_geom_indices)
+        # print("Floor geom index: ", self.floor_geom_index)
+        print("Body geom index: ", self.body_index)
+
         # check no index is -1
-        assert all([index != -1 for index in self.termination_contact_geom_indices])
-        assert all([index != -1 for index in self.feet_geom_indices])
-        assert self.floor_geom_index != -1
-        assert self.body_geom_index != -1
+        # assert all([index != -1 for index in self.termination_contact_geom_indices])
+        # assert self.floor_geom_index != -1
+        # assert self.body_geom_index != -1
 
         # useful buffers
         self.base_quat = np.zeros((self.num_envs, 4))
@@ -46,13 +51,16 @@ class NightmareV3Env():
         self.projected_gravity = np.zeros((self.num_envs, 3))
         self.dof_pos = np.zeros((self.num_envs, self.num_dof))
         self.dof_vel = np.zeros((self.num_envs, self.num_dof))
-        self.contact_forces = np.zeros((self.num_envs, len(self.feet_geom_indices)))
+        self.contact_forces = np.zeros((self.num_envs, len(self.cfg.env.feet_names)))
         self.torques = np.zeros((self.num_envs, self.num_dof))
         self.prev_actions = np.zeros((self.num_envs, self.num_actions))
         self.base_heights = np.zeros(self.num_envs)
 
         if self.cfg.viewer.render:
             self.viewer = mjv.launch_passive(self.model, self.data[0])
+        
+        # save states to render offline
+        self.recorded_states = []
 
         self.reward_scales = class_to_dict(self.cfg.rewards.scales)
         self.command_ranges = self.cfg.commands.ranges
@@ -138,17 +146,31 @@ class NightmareV3Env():
 
         time4 = time.time()
 
-        ### single thread
-        # for env_id in range(self.num_envs):
-        #     self.data[env_id].ctrl = temp[env_id]
-        #     mj.mj_step(self.model, self.data[env_id], self.cfg.control.decimation)
-
         ### multi thread
         for env_id in range(self.num_envs):
             self.data[env_id].ctrl = temp[env_id]
 
         time5 = time.time()
-        mj.mj_step_multithreaded(self.model, self.data, self.cfg.control.decimation, 12)
+
+        # python threading
+        thread_num = 12
+        batch_size = self.num_envs // thread_num
+        threads = []
+
+        def step_thread(start, end):
+            for i in range(start, end):
+                mj.mj_step(self.model, self.data[i], self.cfg.control.decimation)
+
+        for i in range(thread_num):
+            start = i * batch_size
+            end = (i + 1) * batch_size if i != thread_num - 1 else self.num_envs
+            t = threading.Thread(target=step_thread, args=(start, end))
+            threads.append(t)
+            t.start()
+        
+        for t in threads:
+            t.join()
+
         time6 = time.time()
 
         self.episode_length_buf_np += 1
@@ -158,33 +180,31 @@ class NightmareV3Env():
         time7 = time.time()
 
         # update useful buffers
-        for env_id in range(self.num_envs): self.base_quat[env_id] = self.data[env_id].qpos[3:7]
-
+        for env_id in range(self.num_envs): self.base_quat[env_id] = self.data[env_id].qpos[3:7].copy()
         time8 = time.time()
         for env_id in range(self.num_envs): mj.mju_rotVecQuat(self.base_lin_vel[env_id], self.data[env_id].cvel[self.body_index][3:6], self.base_quat[env_id])
         time9 = time.time()
         time10 = time.time()
-        # Transpose the rotation matrices to get the inverse rotation
         time11 = time.time()
         time12 = time.time()
-        for env_id in range(self.num_envs): self.base_ang_vel[env_id] = self.data[env_id].cvel[self.body_index][:3]
+        for env_id in range(self.num_envs): self.base_ang_vel[env_id] = self.data[env_id].cvel[self.body_index][:3].copy()
         time13 = time.time()
         for env_id in range(self.num_envs): mj.mju_rotVecQuat(self.projected_gravity[env_id], self.gravity_vec, self.base_quat[env_id])
         time14 = time.time()
-        for env_id in range(self.num_envs): self.dof_pos[env_id] = self.data[env_id].qpos[-18:]
+        for env_id in range(self.num_envs): self.dof_pos[env_id] = self.data[env_id].qpos[-18:].copy()
         time15 = time.time()
-        for env_id in range(self.num_envs): self.dof_vel[env_id] = self.data[env_id].qvel[-18:]
+        for env_id in range(self.num_envs): self.dof_vel[env_id] = self.data[env_id].qvel[-18:].copy()
         time16 = time.time()
-        for env_id in range(self.num_envs): self.torques[env_id] = self.data[env_id].qfrc_applied[-18:]
+        for env_id in range(self.num_envs): self.torques[env_id] = self.data[env_id].qfrc_applied[-18:].copy()
         
         time17 = time.time()
         self.dof_acc = (self.dof_vel - prev_dof_vel) / self.dt
 
-        for env_id in range(self.num_envs): self.base_heights[env_id] = self.data[env_id].xipos[1][2]
+        for env_id in range(self.num_envs): self.base_heights[env_id] = self.data[env_id].xipos[1][2].copy()
 
         time18 = time.time()
         # update contact forces
-        for env_id in range(self.num_envs): self.contact_forces[env_id] = self.data[env_id].sensordata[:6]
+        for env_id in range(self.num_envs): self.contact_forces[env_id] = self.data[env_id].sensordata[:6].copy()
 
         time19 = time.time()
         env_ids = np.nonzero(self.episode_length_buf_np % int(self.cfg.commands.resampling_time / self.dt) == 0)[0]
@@ -193,9 +213,34 @@ class NightmareV3Env():
         time20 = time.time()
 
         # check for termination
+        self.reset_buf = np.zeros_like(self.reset_buf)
         # self.reset_buf = np.any(self.contact_forces[:, self.termination_contact_geom_indices] > self.cfg.env.termination_contact_force, axis=1)
+        # check max episode length termination
         self.time_out_buf = self.episode_length_buf_np > self.max_episode_length # no terminal reward for time-outs
         self.reset_buf |= self.time_out_buf
+        # check feet contact forces too high
+        self.reset_buf |= self.contact_forces[:, :6].max(axis=1) > self.cfg.env.termination_contact_force
+        # check robot not upside down
+        max_angle = 60 * np.pi / 180 # 60 degrees
+        vec_pointing_down = np.array([0, 0, -1])
+        # np.arccos(np.dot(vec_pointing_down, projgrav) / (np.linalg.norm(vec_pointing_down) * np.linalg.norm(new_vec)))
+        self.reset_buf |= np.arccos(np.dot(self.projected_gravity, vec_pointing_down) / (np.linalg.norm(self.projected_gravity * np.linalg.norm(vec_pointing_down), axis=1))) > max_angle
+        # reset some environments
+        env_ids = np.nonzero(self.reset_buf.flatten())[0]
+
+        # record states
+        if self.cfg.viewer.record_states:
+            # check if it's time to save states
+            if self.reset_buf[0] == True:
+                # make log dir if not present
+                if not os.path.exists(self.log_dir):
+                    os.makedirs(self.log_dir)
+                # save states in file like unixtimestamp.pkl
+                with open(f"{self.log_dir}/{int(time.time())}.pkl", "wb") as f:
+                    pickle.dump(self.recorded_states, f)
+            self.recorded_states.append((self.data[0].time, self.data[0].qpos.copy(), self.data[0].qvel.copy(), self.data[0].act.copy()))
+
+        self.reset_idx(env_ids)
 
         time21 = time.time()
 
@@ -204,6 +249,7 @@ class NightmareV3Env():
         for i in range(len(self.reward_functions)):
             name = self.reward_names[i]
             rew = np.array(self.reward_functions[i]()) * self.reward_scales[name]
+            # print(f"Reward {name}: {rew[0]}")
             self.rew_buf += rew
             self.episode_sums[name] += rew
         # add termination reward after clipping
@@ -213,10 +259,6 @@ class NightmareV3Env():
             self.episode_sums["termination"] += rew
 
         time22 = time.time()
-
-        # reset some environments
-        env_ids = np.nonzero(self.reset_buf.flatten())[0]
-        self.reset_idx(env_ids)
 
         time23 = time.time()
 
@@ -241,30 +283,30 @@ class NightmareV3Env():
 
         time25 = time.time()
 
-        print(f"Time2 - Time1: {(time2 - time1) * 1000} ms")
-        print(f"Time3 - Time2: {(time3 - time2) * 1000} ms")
-        print(f"Time4 - Time3: {(time4 - time3) * 1000} ms")
-        print(f"Time5 - Time4: {(time5 - time4) * 1000} ms")
-        print(f"Time6 - Time5: {(time6 - time5) * 1000} ms")
-        print(f"Time7 - Time6: {(time7 - time6) * 1000} ms")
-        print(f"Time8 - Time7: {(time8 - time7) * 1000} ms")
-        print(f"Time9 - Time8: {(time9 - time8) * 1000} ms")
-        # print(f"Time10 - Time9: {(time10 - time9) * 1000} ms")
-        print(f"Time11 - Time10: {(time11 - time10) * 1000} ms")
-        # print(f"Time12 - Time11: {(time12 - time11) * 1000} ms")
-        print(f"Time13 - Time12: {(time13 - time12) * 1000} ms")
-        print(f"Time14 - Time13: {(time14 - time13) * 1000} ms")
-        print(f"Time15 - Time14: {(time15 - time14) * 1000} ms")
-        print(f"Time16 - Time15: {(time16 - time15) * 1000} ms")
-        print(f"Time17 - Time16: {(time17 - time16) * 1000} ms")
-        print(f"Time18 - Time17: {(time18 - time17) * 1000} ms")
-        print(f"Time19 - Time18: {(time19 - time18) * 1000} ms")
-        print(f"Time20 - Time19: {(time20 - time19) * 1000} ms")
-        print(f"Time21 - Time20: {(time21 - time20) * 1000} ms")
-        print(f"Time22 - Time21: {(time22 - time21) * 1000} ms")
-        print(f"Time23 - Time22: {(time23 - time22) * 1000} ms")
-        print(f"Time24 - Time23: {(time24 - time23) * 1000} ms")
-        print(f"Time25 - Time24: {(time25 - time24) * 1000} ms")
+        # print(f"Time2 - Time1: {(time2 - time1) * 1000} ms")
+        # print(f"Time3 - Time2: {(time3 - time2) * 1000} ms")
+        # print(f"Time4 - Time3: {(time4 - time3) * 1000} ms")
+        # print(f"Time5 - Time4: {(time5 - time4) * 1000} ms")
+        # print(f"Time6 - Time5: {(time6 - time5) * 1000} ms")
+        # print(f"Time7 - Time6: {(time7 - time6) * 1000} ms")
+        # print(f"Time8 - Time7: {(time8 - time7) * 1000} ms")
+        # print(f"Time9 - Time8: {(time9 - time8) * 1000} ms")
+        # # print(f"Time10 - Time9: {(time10 - time9) * 1000} ms")
+        # # print(f"Time11 - Time10: {(time11 - time10) * 1000} ms")
+        # # print(f"Time12 - Time11: {(time12 - time11) * 1000} ms")
+        # print(f"Time13 - Time12: {(time13 - time12) * 1000} ms")
+        # print(f"Time14 - Time13: {(time14 - time13) * 1000} ms")
+        # print(f"Time15 - Time14: {(time15 - time14) * 1000} ms")
+        # print(f"Time16 - Time15: {(time16 - time15) * 1000} ms")
+        # print(f"Time17 - Time16: {(time17 - time16) * 1000} ms")
+        # print(f"Time18 - Time17: {(time18 - time17) * 1000} ms")
+        # print(f"Time19 - Time18: {(time19 - time18) * 1000} ms")
+        # print(f"Time20 - Time19: {(time20 - time19) * 1000} ms")
+        # print(f"Time21 - Time20: {(time21 - time20) * 1000} ms")
+        # print(f"Time22 - Time21: {(time22 - time21) * 1000} ms")
+        # print(f"Time23 - Time22: {(time23 - time22) * 1000} ms")
+        # print(f"Time24 - Time23: {(time24 - time23) * 1000} ms")
+        # print(f"Time25 - Time24: {(time25 - time24) * 1000} ms")
     
         # return tensors only
         # return self.obs_buf, self.privileged_obs_buf, self.rew_buf, self.reset_buf, self.extras
@@ -326,10 +368,24 @@ class NightmareV3Env():
             # self.extras["time_outs"] = self.time_out_buf
             self.extras["time_outs"] = torch.tensor(self.time_out_buf, dtype=torch.float32)
 
+    def draw_arrow(self, pos, quat, size, rgba=(255, 255, 255, 255)):
+        mat = np.zeros((9,), dtype=np.float64)
+        mj.mju_quat2Mat(mat, quat)
+        mj.mjv_initGeom(
+            self.viewer.user_scn.geoms[self.viewer.user_scn.ngeom],
+            type=mj.mjtGeom.mjGEOM_ARROW, 
+            size=size, 
+            rgba=rgba, 
+            pos=pos, 
+            mat=mat
+        )
+        self.viewer.user_scn.ngeom += 1
+
     def render(self):
         """ Render the environment"""
         if self.cfg.viewer.render:
             self.viewer.sync()
+        # self.viewer.user_scn.ngeom = 0
 
     def reset(self):
         """ Reset all robots"""
@@ -387,7 +443,7 @@ class NightmareV3Env():
     def _reward_feet_air_time(self):
         # Reward long steps
         # Need to filter the contacts because the contact reporting of PhysX is unreliable on meshes
-        contact_filt = np.logical_or(self.contact_forces, self.last_contacts)
+        contact_filt = np.logical_or(self.contact_forces > 0.5, self.last_contacts)
         self.last_contacts = self.contact_forces
         first_contact = (self.feet_air_time > 0.) * contact_filt
         self.feet_air_time += self.dt
@@ -402,4 +458,8 @@ class NightmareV3Env():
 
     def _reward_feet_contact_forces(self):
         # penalize high contact forces
-        return np.sum((np.linalg.norm(self.contact_forces, axis=-1) -  self.cfg.rewards.max_contact_force).clip(min=0.), axis=1)
+        return np.sum(((self.contact_forces - self.cfg.rewards.max_contact_force) * (self.contact_forces > self.cfg.rewards.max_contact_force))**2, axis=1)
+    
+    def _reward_default_position(self):
+        # penalize distance from default position
+        return np.sum(np.square(self.dof_pos - self.default_dof_pos), axis=1)

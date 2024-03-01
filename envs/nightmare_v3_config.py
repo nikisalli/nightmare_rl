@@ -25,10 +25,11 @@ class NightmareV3Config(BaseConfig):
             'leg_6_coxa', 'leg_6_femur', 'leg_6_tibia',
             'body_link']
         floor_name = 'floor'
-        termination_contact_force = 2.0
+        termination_contact_force = 50.0
 
     class viewer:
         render = True
+        record_states = True
 
     class control:
         p_gain = 10
@@ -40,7 +41,7 @@ class NightmareV3Config(BaseConfig):
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0]
         decimation = 4
-        action_scale = 0.05
+        action_scale = 0.3
 
     class noise:
         add_noise = False
@@ -87,10 +88,12 @@ class NightmareV3Config(BaseConfig):
             # feet_stumble = -0.0 
             action_rate = -0.01
             stand_still = -0.
+            default_position = -1.0
+            feet_contact_forces = -1.0
 
         tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)
         base_height_target = 0.1
-        max_contact_force = 100. # forces above this value are penalized
+        max_contact_force = 10. # forces above this value are penalized
     
 class NightmareV3ConfigPPO(BaseConfig):
     seed = 1

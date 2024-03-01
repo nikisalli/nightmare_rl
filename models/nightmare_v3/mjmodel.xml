@@ -160,6 +160,5 @@
     <touch name="touch_4" site="leg_4_foot"/>
     <touch name="touch_5" site="leg_5_foot"/>
     <touch name="touch_6" site="leg_6_foot"/>
-    <touch name="touch_body" site="base_link"/>
   </sensor>
 </mujoco>
