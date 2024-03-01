@@ -29,12 +29,7 @@ listener.start()
 model = mj.MjModel.from_xml_path("models/nightmare_v3/mjmodel.xml")
 data = mj.MjData(model)
 
-model.opt.timestep = 0.0025
-
-p_gain = 10
-d_gain = 0.05
-max_speed = 0.1
-speed_p_gain = 0.05
+model.opt.timestep = 0.002
 
 engine = EngineNode()
 engine.update(0.0, 0.0, 'idle')
@@ -45,23 +40,6 @@ print("time step: ", model.opt.timestep)
 accum = 0
 prev = time.time()
 
-# rolling plot of cvel[1]
-import matplotlib.pyplot as plt
-import numpy as np
-
-# fig, ax = plt.subplots()
-# xs = np.zeros((100, 18))
-# y = np.arange(0, 100)
-# # set y-axis limits
-# ax.set_ylim(-10, 10)
-# line1, = ax.plot(y, xs[:, 14], label='1')
-# line2, = ax.plot(y, xs[:, 15], label='2')
-# line3, = ax.plot(y, xs[:, 16], label='3')
-# line4, = ax.plot(y, xs[:, 17], label='4')
-# fig.canvas.draw()
-# axbackground = fig.canvas.copy_from_bbox(ax.bbox)
-# plt.show(block=False)
-
 with mj.viewer.launch_passive(model, data) as viewer:
     viewer.sync()
     while viewer.is_running():
@@ -69,26 +47,12 @@ with mj.viewer.launch_passive(model, data) as viewer:
         actions = engine.update(lin_speed, ang_speed, 'awake', 'walk')
         data.ctrl[:] = actions
 
-        # fig.canvas.restore_region(axbackground)
-        # xs = np.roll(xs, -1, axis=0)
-        # xs[-1] = data.qvel[-18:]
-        # line1.set_ydata(xs[:, 14])
-        # line2.set_ydata(xs[:, 15])
-        # line3.set_ydata(xs[:, 16])
-        # line4.set_ydata(xs[:, 17])
-        # ax.draw_artist(line1)
-        # ax.draw_artist(line2)
-        # ax.draw_artist(line3)
-        # ax.draw_artist(line4)
-        # fig.canvas.blit(ax.bbox)
-        # fig.canvas.flush_events()
-
-        # print(data.efc_force.shape)
-        # print("-------------------")
-
         mj.mj_step(model, data)
 
-        # viewer.sync()
+        # print sensor data
+        print("sensor data: ", data.sensordata)
+
+        viewer.sync()
 
         accum += 1
         if accum > 1000:

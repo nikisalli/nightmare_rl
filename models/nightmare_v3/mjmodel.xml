@@ -40,7 +40,8 @@
             <inertial pos="0.0424048 0.0161022 -0.0263142" quat="0.346149 -0.138342 -0.305082 0.876337" mass="0.0956358" diaginertia="0.000260588 0.000254061 2.11888e-05"/>
             <joint name="leg1tibia" pos="0 0 0" axis="-0.707107 0.707107 0"/>
             <geom pos="-0.107917 -0.144991 -0.120366" type="mesh" rgba="0.7 0.7 0.7 1" mesh="leg_1_tibia" name="leg_1_tibia"/>
-            <geom size="0.007" pos="0.083143 0.055315 -0.13882" rgba="0.7 0.7 0.7 1" name="leg_1_foot"/>
+            <!-- <geom size="0.007" pos="0.083143 0.055315 -0.13882" rgba="0.7 0.7 0.7 1" name="leg_1_foot"/> -->
+            <site name="leg_1_foot" type="sphere" size="0.007" pos="0.083143 0.055315 -0.13882" rgba="0.7 0.7 0.7 1"/>
           </body>
         </body>
       </body>
@@ -56,7 +57,8 @@
             <inertial pos="0.0413745 -0.0174063 -0.0263253" quat="0.67274 -0.230752 -0.242624 0.659779" mass="0.0956412" diaginertia="0.000260812 0.000254256 2.12333e-05"/>
             <joint name="leg2tibia" pos="0 0 0" axis="0 1 0"/>
             <geom pos="-0.168122 -0.0165 -0.120366" type="mesh" rgba="0.7 0.7 0.7 1" mesh="leg_2_tibia" name="leg_2_tibia"/>
-            <geom size="0.007" pos="0.098086 -0.016834 -0.13945" rgba="0.7 0.7 0.7 1" name="leg_2_foot"/>
+            <!-- <geom size="0.007" pos="0.098086 -0.016834 -0.13945" rgba="0.7 0.7 0.7 1" name="leg_2_foot"/> -->
+            <site name="leg_2_foot" type="sphere" size="0.007" pos="0.098086 -0.016834 -0.13945" rgba="0.7 0.7 0.7 1"/>
           </body>
         </body>
       </body>
@@ -72,7 +74,8 @@
             <inertial pos="0.0169555 -0.0415552 -0.0263028" quat="0.87653 -0.305186 -0.138788 0.345392" mass="0.0956393" diaginertia="0.000260351 0.000253873 2.11376e-05"/>
             <joint name="leg3tibia" pos="0 0 0" axis="0.707107 0.707107 0"/>
             <geom pos="-0.131958 0.12095 -0.120366" type="mesh" rgba="0.7 0.7 0.7 1" mesh="leg_3_tibia" name="leg_3_tibia"/>
-            <geom size="0.007" pos="0.057977 -0.080731 -0.13799" rgba="0.7 0.7 0.7 1" name="leg_3_foot"/>
+            <!-- <geom size="0.007" pos="0.057977 -0.080731 -0.13799" rgba="0.7 0.7 0.7 1" name="leg_3_foot"/> -->
+            <site name="leg_3_foot" type="sphere" size="0.007" pos="0.057977 -0.080731 -0.13799" rgba="0.7 0.7 0.7 1"/>
           </body>
         </body>
       </body>
@@ -88,7 +91,8 @@
             <inertial pos="-0.0424064 -0.0161006 -0.0263153" quat="0.346154 0.138339 0.305084 0.876335" mass="0.0956393" diaginertia="0.000260588 0.000254061 2.11887e-05"/>
             <joint name="leg4tibia" pos="0 0 0" axis="0.707107 -0.707107 0"/>
             <geom pos="0.107917 0.144991 -0.120366" type="mesh" rgba="0.7 0.7 0.7 1" mesh="leg_4_tibia" name="leg_4_tibia"/>
-            <geom size="0.007" pos="-0.083143 -0.055315 -0.13882" rgba="0.7 0.7 0.7 1" name="leg_4_foot"/>
+            <!-- <geom size="0.007" pos="-0.083143 -0.055315 -0.13882" rgba="0.7 0.7 0.7 1" name="leg_4_foot"/> -->
+            <site name="leg_4_foot" type="sphere" size="0.007" pos="-0.083143 -0.055315 -0.13882" rgba="0.7 0.7 0.7 1"/>
           </body>
         </body>
       </body>
@@ -104,7 +108,8 @@
             <inertial pos="-0.0413745 0.0185812 -0.0263253" quat="0.66138 0.241846 0.231563 0.671168" mass="0.0956412" diaginertia="0.000260808 0.000254257 2.12357e-05"/>
             <joint name="leg5tibia" pos="0 0 0" axis="0 -1 0"/>
             <geom pos="0.168122 0.0175 -0.120366" type="mesh" rgba="0.7 0.7 0.7 1" mesh="leg_5_tibia" name="leg_5_tibia"/>
-            <geom size="0.007" pos="-0.098086 0.018334 -0.13945" rgba="0.7 0.7 0.7 1" name="leg_5_foot"/>
+            <!-- <geom size="0.007" pos="-0.098086 0.018334 -0.13945" rgba="0.7 0.7 0.7 1" name="leg_5_foot"/> -->
+            <site name="leg_5_foot" type="sphere" size="0.007" pos="-0.098086 0.018334 -0.13945" rgba="0.7 0.7 0.7 1"/>
           </body>
         </body>
       </body>
@@ -120,7 +125,8 @@
             <inertial pos="-0.016954 0.0415567 -0.0263017" quat="0.876532 0.305184 0.13879 0.345386" mass="0.0956358" diaginertia="0.000260351 0.000253874 2.11377e-05"/>
             <joint name="leg6tibia" pos="0 0 0" axis="-0.707107 -0.707107 0"/>
             <geom pos="0.132665 -0.120243 -0.120366" type="mesh" rgba="0.7 0.7 0.7 1" mesh="leg_6_tibia" name="leg_6_tibia"/>
-            <geom size="0.007" pos="-0.057977 0.080731 -0.13799" rgba="0.7 0.7 0.7 1" name="leg_6_foot"/>
+            <!-- <geom size="0.007" pos="-0.057977 0.080731 -0.13799" rgba="0.7 0.7 0.7 1" name="leg_6_foot"/> -->
+            <site name="leg_6_foot" type="sphere" size="0.007" pos="-0.057977 0.080731 -0.13799" rgba="0.7 0.7 0.7 1"/>
           </body>
         </body>
       </body>
@@ -146,4 +152,14 @@
     <position ctrllimited="true" ctrlrange="-1 1" joint="leg6femur" kp="10" kv="0.05"/>
     <position ctrllimited="true" ctrlrange="-1 1" joint="leg6tibia" kp="10" kv="0.05"/>
   </actuator>
+
+  <sensor>
+    <touch name="touch_1" site="leg_1_foot"/>
+    <touch name="touch_2" site="leg_2_foot"/>
+    <touch name="touch_3" site="leg_3_foot"/>
+    <touch name="touch_4" site="leg_4_foot"/>
+    <touch name="touch_5" site="leg_5_foot"/>
+    <touch name="touch_6" site="leg_6_foot"/>
+    <touch name="touch_body" site="base_link"/>
+  </sensor>
 </mujoco>
