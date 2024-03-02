@@ -19,6 +19,6 @@ git checkout tags/v1.0.2
 pip install -e .
 cd ..
 
-git clone https://github.com/nikisalli/nightmare_rl
+# git clone https://github.com/nikisalli/nightmare_rl
 cd nightmare_rl
 pip install -r requirements.txt
