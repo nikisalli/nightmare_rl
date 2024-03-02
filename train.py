@@ -3,6 +3,19 @@ import datetime
 from envs.nightmare_v3_config import NightmareV3ConfigPPO, NightmareV3Config
 from envs.nightmare_v3_env import NightmareV3Env
 from envs.helpers import class_to_dict, get_load_path
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-r", "--resume", action="store_true", help="Resume training from the last checkpoint", default=False, dest="resume")
+parser.add_argument("-v", "--render", action="store_true", help="Render the environment", default=False, dest="render")
+parser.add_argument("-n", "--num_threads", type=int, help="Number of threads to use", default=1, dest="num_threads")
+
+args = parser.parse_args()
+resume = args.resume
+render = args.render
+num_threads = args.num_threads
+
+print(f"Resume: {resume}, Render: {render}, Num threads: {num_threads}")
 
 # seconds_minutes_hours_day_month_year
 date_today = datetime.datetime.now()
@@ -13,9 +26,13 @@ print(f"Logging to {log_dir}")
 cfg = NightmareV3Config()
 train_cfg = NightmareV3ConfigPPO()
 
+cfg.viewer.render = render
+
+train_cfg.runner.resume = resume
+
 train_cfg_dict = class_to_dict(train_cfg)
 
-env = NightmareV3Env(cfg, log_dir=log_dir)
+env = NightmareV3Env(cfg, log_dir=log_dir, num_threads=num_threads)
 runner = OnPolicyRunner(env, train_cfg_dict, log_dir=log_dir, device=cfg.rl_device)
 
 resume = train_cfg.runner.resume

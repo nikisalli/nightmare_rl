@@ -12,9 +12,10 @@ import os
 import torch
 
 class NightmareV3Env():
-    def __init__(self, cfg: NightmareV3Config, log_dir="/tmp/nightmare_v3/logs"):
+    def __init__(self, cfg: NightmareV3Config, log_dir="/tmp/nightmare_v3/logs", num_threads=1):
         self.cfg = cfg
         self.log_dir = log_dir
+        self.thread_num = num_threads
 
         self.num_envs = self.cfg.env.num_envs
         self.num_obs = self.cfg.env.num_obs
@@ -153,17 +154,16 @@ class NightmareV3Env():
         time5 = time.time()
 
         # python threading
-        thread_num = 12
-        batch_size = self.num_envs // thread_num
+        batch_size = self.num_envs // self.thread_num
         threads = []
 
         def step_thread(start, end):
             for i in range(start, end):
                 mj.mj_step(self.model, self.data[i], self.cfg.control.decimation)
 
-        for i in range(thread_num):
+        for i in range(self.thread_num):
             start = i * batch_size
-            end = (i + 1) * batch_size if i != thread_num - 1 else self.num_envs
+            end = (i + 1) * batch_size if i != self.thread_num - 1 else self.num_envs
             t = threading.Thread(target=step_thread, args=(start, end))
             threads.append(t)
             t.start()
