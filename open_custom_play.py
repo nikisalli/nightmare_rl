@@ -5,7 +5,7 @@ import pickle
 
 model = mj.MjModel.from_xml_path("models/nightmare_v3/mjmodel.xml")
 
-with open("logs/nightmare_v3/55_34_00_02_03_2024/1709336096.pkl", "rb") as f:
+with open("logs/nightmare_v3/2024-03-03 14:05:30.308070/1709475716.pkl", "rb") as f:
     qposs = pickle.load(f)
 
 data = mj.MjData(model)

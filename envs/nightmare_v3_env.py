@@ -71,7 +71,6 @@ class NightmareV3Env():
         self.privileged_obs_buf = None
         self.rew_buf = np.zeros(self.num_envs)
         self.reset_buf = np.ones(self.num_envs, dtype=np.int64)
-        self.episode_length_buf_np = np.zeros(self.num_envs, dtype=np.int64)
         self.episode_length_buf = torch.zeros(self.num_envs, dtype=torch.int64)
         self.time_out_buf = np.zeros(self.num_envs, dtype=bool)
         self.feet_air_time = np.zeros((self.num_envs, 6))
@@ -174,7 +173,6 @@ class NightmareV3Env():
 
         time6 = time.time()
 
-        self.episode_length_buf_np += 1
         self.episode_length_buf += 1
         self.common_step_counter += 1
 
@@ -208,7 +206,8 @@ class NightmareV3Env():
         for env_id in range(self.num_envs): self.contact_forces[env_id] = self.data[env_id].sensordata[:6].copy()
 
         time19 = time.time()
-        env_ids = np.nonzero(self.episode_length_buf_np % int(self.cfg.commands.resampling_time / self.dt) == 0)[0]
+        # env_ids = np.nonzero(self.episode_length_buf_np % int(self.cfg.commands.resampling_time / self.dt) == 0)[0]
+        env_ids = np.nonzero(self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt) == 0)[0]
         self._resample_commands(env_ids)
 
         time20 = time.time()
@@ -217,7 +216,8 @@ class NightmareV3Env():
         self.reset_buf = np.zeros_like(self.reset_buf)
         # self.reset_buf = np.any(self.contact_forces[:, self.termination_contact_geom_indices] > self.cfg.env.termination_contact_force, axis=1)
         # check max episode length termination
-        self.time_out_buf = self.episode_length_buf_np > self.max_episode_length # no terminal reward for time-outs
+        # self.time_out_buf = self.episode_length_buf_np > self.max_episode_length # no terminal reward for time-outs
+        self.time_out_buf = self.episode_length_buf > self.max_episode_length # no terminal reward for time-outs
         self.reset_buf |= self.time_out_buf
         # check feet contact forces too high
         self.reset_buf |= self.contact_forces[:, :6].max(axis=1) > self.cfg.env.termination_contact_force
@@ -355,7 +355,6 @@ class NightmareV3Env():
 
         # reset buffers
         self.feet_air_time[env_ids] = 0.
-        self.episode_length_buf_np[env_ids] = 0
         self.episode_length_buf[env_ids] = 0
         self.reset_buf[env_ids] = 1
         # fill extras
