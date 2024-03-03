@@ -76,12 +76,12 @@ class NightmareV3Config(BaseConfig):
         class scales:
             termination = -200.0
             tracking_lin_vel = 400.0
-            tracking_ang_vel = 200.0
+            tracking_ang_vel = 20.0
             lin_vel_z = -2.0
             ang_vel_xy = -0.05
             dof_vel = 0.001
             dof_acc = -2.5e-7
-            base_height = -10.0
+            base_height = -50.0
             feet_air_time = 1.0
             default_position = -0.005
             feet_contact_forces = -0.05
