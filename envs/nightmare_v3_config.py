@@ -8,7 +8,7 @@ class NightmareV3Config(BaseConfig):
     class env:
         dt = 0.005
         model_path = 'models/nightmare_v3/mjmodel.xml'
-        num_envs = 2048
+        num_envs = 8192
         num_obs = 66
         num_privileged_obs = 0
         num_actions = 18
@@ -75,11 +75,11 @@ class NightmareV3Config(BaseConfig):
     class rewards:
         class scales:
             termination = -200.0
-            tracking_lin_vel = 40.0
-            tracking_ang_vel = 20.0
+            tracking_lin_vel = 400.0
+            tracking_ang_vel = 200.0
             lin_vel_z = -2.0
             ang_vel_xy = -0.05
-            dof_vel = 0.01
+            dof_vel = 0.001
             dof_acc = -2.5e-7
             base_height = -10.0
             feet_air_time = 1.0

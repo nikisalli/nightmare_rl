@@ -9,6 +9,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-r", "--resume", action="store_true", help="Resume training from the last checkpoint", default=False, dest="resume")
 parser.add_argument("-v", "--render", action="store_true", help="Render the environment", default=False, dest="render")
 parser.add_argument("-n", "--num_threads", type=int, help="Number of threads to use", default=1, dest="num_threads")
+parser.add_argument("-e", "--envs", type=int, help="Number of environments to use", default=2048, dest="num_envs")
 
 args = parser.parse_args()
 resume = args.resume
@@ -27,6 +28,7 @@ cfg = NightmareV3Config()
 train_cfg = NightmareV3ConfigPPO()
 
 cfg.viewer.render = render
+cfg.env.num_envs = args.num_envs
 
 train_cfg.runner.resume = resume
 
