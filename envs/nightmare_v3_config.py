@@ -91,7 +91,7 @@ class NightmareV3Config(BaseConfig):
             default_position = -0.5
             feet_contact_forces = -0.05
 
-        tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)
+        tracking_sigma = 0.00003 # tracking reward = exp(-error^2/sigma)
         base_height_target = 0.1
         max_contact_force = 10. # forces above this value are penalized
     
