@@ -15,8 +15,8 @@ ang_speed = 0.0
 
 prev_time = 0
 
-decimation = 2
-action_rate = 0.01
+decimation = 4
+action_rate = 0.08
 prev_actions = np.zeros(18)
 
 # Update the state of the keys when they are pressed or released
@@ -36,8 +36,6 @@ listener.start()
 # model = mj.load_model_from_path("models/nightmare_v3/mjmodel.xml")
 model = mj.MjModel.from_xml_path("models/nightmare_v3/mjmodel.xml")
 data = mj.MjData(model)
-
-model.opt.timestep = 0.002
 
 engine = EngineNode()
 engine.update(0.0, 0.0, 'idle')

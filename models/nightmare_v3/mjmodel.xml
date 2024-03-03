@@ -1,6 +1,6 @@
 <mujoco model="nightmare">
   <compiler angle="radian"/>
-  <option gravity="0 0 -9.81" integrator="implicitfast" timestep="0.01"/>
+  <option gravity="0 0 -9.81" integrator="implicitfast" timestep="0.005"/>
   <asset>
     <mesh name="base_link" file="base_link.stl" scale="0.001 0.001 0.001"/>
     <mesh name="leg_1_tibia" file="leg_1_tibia.stl" scale="0.001 0.001 0.001"/>

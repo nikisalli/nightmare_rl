@@ -6,7 +6,7 @@ class NightmareV3Config(BaseConfig):
     rl_device = 'cuda'
 
     class env:
-        dt = 0.01
+        dt = 0.005
         model_path = 'models/nightmare_v3/mjmodel.xml'
         num_envs = 2048
         num_obs = 66
@@ -34,14 +34,14 @@ class NightmareV3Config(BaseConfig):
     class control:
         p_gain = 20
         d_gain = 0.05
-        action_rate_limit = 0.02
+        action_rate_limit = 0.08
         default_pos = [0, np.pi / 5, 0, 
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0]
-        decimation = 2
+        decimation = 4
         action_scale = 1.0
 
     class noise:
@@ -58,9 +58,9 @@ class NightmareV3Config(BaseConfig):
     class commands:
         resampling_time = 10
         class ranges:
-            max_lin_vel_x = 0.4
-            max_lin_vel_y = 0.4
-            max_ang_vel = 0.6
+            max_lin_vel_x = 0.2
+            max_lin_vel_y = 0.2
+            max_ang_vel = 0.4
     
     class normalization:
         class obs_scales:
@@ -75,8 +75,8 @@ class NightmareV3Config(BaseConfig):
     class rewards:
         class scales:
             termination = -200.0
-            tracking_lin_vel = 20.0
-            tracking_ang_vel = 40.0
+            tracking_lin_vel = 40.0
+            tracking_ang_vel = 20.0
             lin_vel_z = -2.0
             ang_vel_xy = -0.05
             dof_vel = 0.01

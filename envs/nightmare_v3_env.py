@@ -8,6 +8,10 @@ import threading
 import pickle
 import os
 
+# from nikengine.engine import EngineNode, set_time_s, config
+
+# config.ENGINE_FPS = 1.0 / 0.01 / 2
+
 # print(mj.mj_step_threaded)
 import torch
 
@@ -23,6 +27,7 @@ class NightmareV3Env():
         self.num_actions = self.cfg.env.num_actions
 
         self.model = mj.MjModel.from_xml_path(self.cfg.env.model_path)
+        self.model.opt.timestep = self.cfg.env.dt
         self.data = [mj.MjData(self.model) for _ in range(self.num_envs)]
 
         self.num_dof = self.model.nv - 6
@@ -124,6 +129,9 @@ class NightmareV3Env():
         # reward episode sums
         self.episode_sums = {name: np.zeros(self.num_envs) for name in self.reward_scales.keys()}
 
+        # self.engine_nodes = [EngineNode() for _ in range(self.num_envs)]
+        # self.time = 0
+
     def step(self, actions):
         """ Apply actions, simulate, call self.post_physics_step()
 
@@ -145,6 +153,9 @@ class NightmareV3Env():
         prev_dof_vel = self.dof_vel.copy()
 
         actions = np.array(self.actions) * self.cfg.control.action_scale - self.default_dof_pos
+        # self.time += self.dt * self.cfg.control.decimation
+        # set_time_s(self.time)
+        # actions = np.array([self.engine_nodes[i].update(self.commands[i, 0], self.commands[i, 2], 'awake', 'walk') for i in range(self.num_envs)])
         self.limited_actions += np.clip(actions - self.limited_actions, -self.cfg.control.action_rate_limit, self.cfg.control.action_rate_limit)
         velocity_command = (self.limited_actions - self.dof_pos) * self.cfg.control.p_gain #  - self.cfg.control.d_gain * self.dof_vel
 
@@ -182,7 +193,7 @@ class NightmareV3Env():
         time7 = time.time()
 
         # update useful buffers
-        for env_id in range(self.num_envs): self.base_quat[env_id] = self.data[env_id].qpos[3:7].copy()
+        for env_id in range(self.num_envs): mj.mju_negQuat(self.base_quat[env_id], self.data[env_id].qpos[3:7])
         time8 = time.time()
         for env_id in range(self.num_envs): mj.mju_rotVecQuat(self.base_lin_vel[env_id], self.data[env_id].cvel[self.body_index][3:6], self.base_quat[env_id])
         time9 = time.time()
@@ -335,7 +346,7 @@ class NightmareV3Env():
         self.commands[env_ids, 2] = np.random.rand(len(env_ids)) * 2 * self.command_ranges.max_ang_vel - self.command_ranges.max_ang_vel
 
         # set small commands to zero
-        self.commands[env_ids, :2] *= (np.linalg.norm(self.commands[env_ids, :2], axis=1) > 0.2)[:, np.newaxis]
+        self.commands[env_ids, :2] *= (np.linalg.norm(self.commands[env_ids, :2], axis=1) > 0.02)[:, np.newaxis]
 
     def reset_idx(self, env_ids):
         """ Reset some environments.
@@ -435,11 +446,13 @@ class NightmareV3Env():
 
     def _reward_tracking_lin_vel(self):
         # Tracking of linear velocity commands (xy axes)
+        # print(f"target: {self.commands[0, :2]} actual: {self.base_lin_vel[0, :2]}")
         lin_vel_error = np.sum(np.square(self.commands[:, :2] - self.base_lin_vel[:, :2]), axis=1)
         return np.exp(-lin_vel_error/self.cfg.rewards.tracking_sigma)
 
     def _reward_tracking_ang_vel(self):
         # Tracking of angular velocity commands (yaw) 
+        # print(f"target: {self.commands[0, 2]} actual: {self.base_ang_vel[0, 2]}")
         ang_vel_error = np.square(self.commands[:, 2] - self.base_ang_vel[:, 2])
         return np.exp(-ang_vel_error/self.cfg.rewards.tracking_sigma)
 
