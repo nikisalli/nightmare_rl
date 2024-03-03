@@ -74,11 +74,12 @@ class NightmareV3Env():
         self.episode_length_buf = torch.zeros(self.num_envs, dtype=torch.int64)
         self.time_out_buf = np.zeros(self.num_envs, dtype=bool)
         self.feet_air_time = np.zeros((self.num_envs, 6))
+        self.leg_contact_force_difference = np.zeros((self.num_envs, 6))
         self.last_contacts = np.zeros((self.num_envs, 6), dtype=bool)
         self.commands = np.zeros((self.num_envs, 3))
         self.commands_scale = np.array([self.obs_scales.lin_vel, self.obs_scales.lin_vel, self.obs_scales.ang_vel])
         self.actions = np.zeros((self.num_envs, self.num_actions))
-        self.leg_contact_force_difference = np.zeros((self.num_envs, 6))
+        self.limited_actions = np.zeros((self.num_envs, self.num_actions))
 
         self.dt = self.cfg.env.dt
         self.max_episode_length_s = self.cfg.env.episode_length_s
@@ -143,13 +144,15 @@ class NightmareV3Env():
 
         prev_dof_vel = self.dof_vel.copy()
 
-        temp = np.array(self.actions) * self.cfg.control.action_scale - self.default_dof_pos
+        actions = np.array(self.actions) * self.cfg.control.action_scale - self.default_dof_pos
+        self.limited_actions += np.clip(actions - self.limited_actions, -self.cfg.control.action_rate_limit, self.cfg.control.action_rate_limit)
+        velocity_command = (self.limited_actions - self.dof_pos) * self.cfg.control.p_gain #  - self.cfg.control.d_gain * self.dof_vel
 
         time4 = time.time()
 
         ### multi thread
         for env_id in range(self.num_envs):
-            self.data[env_id].ctrl = temp[env_id]
+            self.data[env_id].ctrl = velocity_command[env_id]
 
         time5 = time.time()
 
@@ -207,7 +210,7 @@ class NightmareV3Env():
 
         time19 = time.time()
         # env_ids = np.nonzero(self.episode_length_buf_np % int(self.cfg.commands.resampling_time / self.dt) == 0)[0]
-        env_ids = np.nonzero(self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt) == 0)[0]
+        env_ids = np.array(np.nonzero(self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt / self.cfg.control.decimation) == 0).flatten())
         self._resample_commands(env_ids)
 
         time20 = time.time()
@@ -217,7 +220,7 @@ class NightmareV3Env():
         # self.reset_buf = np.any(self.contact_forces[:, self.termination_contact_geom_indices] > self.cfg.env.termination_contact_force, axis=1)
         # check max episode length termination
         # self.time_out_buf = self.episode_length_buf_np > self.max_episode_length # no terminal reward for time-outs
-        self.time_out_buf = self.episode_length_buf > self.max_episode_length # no terminal reward for time-outs
+        self.time_out_buf = np.array(self.episode_length_buf) > self.max_episode_length # no terminal reward for time-outs
         self.reset_buf |= self.time_out_buf
         # check feet contact forces too high
         self.reset_buf |= self.contact_forces[:, :6].max(axis=1) > self.cfg.env.termination_contact_force
@@ -448,7 +451,7 @@ class NightmareV3Env():
         first_contact = (self.feet_air_time > 0.) * contact_filt
         self.feet_air_time += self.dt
         rew_airTime = np.sum((self.feet_air_time - 0.5) * first_contact, axis=1) # reward only on first contact with the ground
-        rew_airTime *= np.linalg.norm(self.commands[:, :2], axis=1) > 0.1 #no reward for zero command
+        rew_airTime *= np.linalg.norm(self.commands[:, :2], axis=1) > 0.01 #no reward for zero command
         self.feet_air_time *= ~contact_filt
         return rew_airTime
 

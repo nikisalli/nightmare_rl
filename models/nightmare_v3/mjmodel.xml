@@ -1,6 +1,6 @@
 <mujoco model="nightmare">
   <compiler angle="radian"/>
-  <option gravity="0 0 -9.81"/>
+  <option gravity="0 0 -9.81" integrator="implicitfast" timestep="0.01"/>
   <asset>
     <mesh name="base_link" file="base_link.stl" scale="0.001 0.001 0.001"/>
     <mesh name="leg_1_tibia" file="leg_1_tibia.stl" scale="0.001 0.001 0.001"/>
@@ -133,24 +133,24 @@
     </body>
   </worldbody>
   <actuator>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg1coxa" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg1femur" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg1tibia" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg2coxa" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg2femur" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg2tibia" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg3coxa" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg3femur" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg3tibia" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg4coxa" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg4femur" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg4tibia" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg5coxa" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg5femur" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg5tibia" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg6coxa" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg6femur" kp="10" kv="0.05"/>
-    <position ctrllimited="true" ctrlrange="-1 1" joint="leg6tibia" kp="10" kv="0.05"/>
+    <velocity name="vel coxa1" ctrllimited="true" ctrlrange="-8 8" joint="leg1coxa" kv="0.5"/>
+    <velocity name="vel femur1" ctrllimited="true" ctrlrange="-8 8" joint="leg1femur" kv="0.5"/>
+    <velocity name="vel tibia1" ctrllimited="true" ctrlrange="-8 8" joint="leg1tibia" kv="0.5"/>
+    <velocity name="vel coxa2" ctrllimited="true" ctrlrange="-8 8" joint="leg2coxa" kv="0.5"/>
+    <velocity name="vel femur2" ctrllimited="true" ctrlrange="-8 8" joint="leg2femur" kv="0.5"/>
+    <velocity name="vel tibia2" ctrllimited="true" ctrlrange="-8 8" joint="leg2tibia" kv="0.5"/>
+    <velocity name="vel coxa3" ctrllimited="true" ctrlrange="-8 8" joint="leg3coxa" kv="0.5"/>
+    <velocity name="vel femur3" ctrllimited="true" ctrlrange="-8 8" joint="leg3femur" kv="0.5"/>
+    <velocity name="vel tibia3" ctrllimited="true" ctrlrange="-8 8" joint="leg3tibia" kv="0.5"/>
+    <velocity name="vel coxa4" ctrllimited="true" ctrlrange="-8 8" joint="leg4coxa" kv="0.5"/>
+    <velocity name="vel femur4" ctrllimited="true" ctrlrange="-8 8" joint="leg4femur" kv="0.5"/>
+    <velocity name="vel tibia4" ctrllimited="true" ctrlrange="-8 8" joint="leg4tibia" kv="0.5"/>
+    <velocity name="vel coxa5" ctrllimited="true" ctrlrange="-8 8" joint="leg5coxa" kv="0.5"/>
+    <velocity name="vel femur5" ctrllimited="true" ctrlrange="-8 8" joint="leg5femur" kv="0.5"/>
+    <velocity name="vel tibia5" ctrllimited="true" ctrlrange="-8 8" joint="leg5tibia" kv="0.5"/>
+    <velocity name="vel coxa6" ctrllimited="true" ctrlrange="-8 8" joint="leg6coxa" kv="0.5"/>
+    <velocity name="vel femur6" ctrllimited="true" ctrlrange="-8 8" joint="leg6femur" kv="0.5"/>
+    <velocity name="vel tibia6" ctrllimited="true" ctrlrange="-8 8" joint="leg6tibia" kv="0.5"/>
   </actuator>
 
   <sensor>

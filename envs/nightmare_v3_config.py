@@ -6,13 +6,13 @@ class NightmareV3Config(BaseConfig):
     rl_device = 'cuda'
 
     class env:
-        dt = 0.002
+        dt = 0.01
         model_path = 'models/nightmare_v3/mjmodel.xml'
         num_envs = 2048
         num_obs = 66
         num_privileged_obs = 0
         num_actions = 18
-        episode_length_s = 10
+        episode_length_s = 20
         send_timeouts = True
         feet_names = ['leg_1_foot', 'leg_2_foot', 'leg_3_foot', 'leg_4_foot', 'leg_5_foot', 'leg_6_foot']
         body_name = 'base_link'
@@ -32,16 +32,17 @@ class NightmareV3Config(BaseConfig):
         record_states = True
 
     class control:
-        p_gain = 10
+        p_gain = 20
         d_gain = 0.05
+        action_rate_limit = 0.02
         default_pos = [0, np.pi / 5, 0, 
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0]
-        decimation = 4
-        action_scale = 0.3
+        decimation = 2
+        action_scale = 1.0
 
     class noise:
         add_noise = False
@@ -55,7 +56,7 @@ class NightmareV3Config(BaseConfig):
             height_measurements = 1.0
     
     class commands:
-        resampling_time = 5
+        resampling_time = 10
         class ranges:
             max_lin_vel_x = 0.4
             max_lin_vel_y = 0.4
@@ -74,22 +75,23 @@ class NightmareV3Config(BaseConfig):
     class rewards:
         class scales:
             termination = -200.0
-            tracking_lin_vel = 10.0
-            tracking_ang_vel = 5.0
+            tracking_lin_vel = 20.0
+            tracking_ang_vel = 40.0
             lin_vel_z = -2.0
             ang_vel_xy = -0.05
-            orientation = -0.
-            torques = -0.00001
-            dof_vel = -0.003
-            dof_acc = -1e-8
+            dof_vel = 0.01
+            dof_acc = -2.5e-7
             base_height = -10.0
-            feet_air_time =  1.0
-            # collision = -1.
-            # feet_stumble = -0.0 
-            action_rate = -0.01
-            stand_still = -1.0
-            default_position = -0.5
+            feet_air_time = 1.0
+            default_position = -0.005
             feet_contact_forces = -0.05
+
+            stand_still = 0 # -1.0
+            action_rate = 0 # -0.01
+            orientation = 0 # -0.
+            torques = 0 # -0.00001
+            collision = 0 # -1.
+            feet_stumble = 0 # -0.0 
 
         tracking_sigma = 0.00003 # tracking reward = exp(-error^2/sigma)
         base_height_target = 0.1
@@ -126,7 +128,7 @@ class NightmareV3ConfigPPO(BaseConfig):
     class runner:
         policy_class_name = 'ActorCritic'
         algorithm_class_name = 'PPO'
-        num_steps_per_env = 62 # per iteration
+        num_steps_per_env = 60 # per iteration
         max_iterations = 1000000000 # number of policy updates
 
         # logging

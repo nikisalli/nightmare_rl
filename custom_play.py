@@ -4,6 +4,7 @@ from nikengine.engine import EngineNode, set_time_s, config
 from pynput.keyboard import Key, Listener, Controller, KeyCode
 import time
 import pickle
+import numpy as np
 
 # Dictionary to store the state of the keys
 lin = 0.05
@@ -11,6 +12,12 @@ ang = 0.2
 
 lin_speed = 0.0
 ang_speed = 0.0
+
+prev_time = 0
+
+decimation = 2
+action_rate = 0.01
+prev_actions = np.zeros(18)
 
 # Update the state of the keys when they are pressed or released
 def on_key_change(key, state):
@@ -34,14 +41,12 @@ model.opt.timestep = 0.002
 
 engine = EngineNode()
 engine.update(0.0, 0.0, 'idle')
-config.ENGINE_FPS = 1.0 / model.opt.timestep
+config.ENGINE_FPS = 1.0 / model.opt.timestep / decimation
 
 print("time step: ", model.opt.timestep)
 
 accum = 0
 prev = time.time()
-
-import numpy as np
 
 qposs = []
 
@@ -49,35 +54,29 @@ with mj.viewer.launch_passive(model, data) as viewer:
     viewer.sync()
     while viewer.is_running():
         set_time_s(data.time)
+        print("time: ", data.time)
         actions = engine.update(lin_speed, ang_speed, 'awake', 'walk')
-        data.ctrl[:] = actions
+        # actions = np.random.uniform(-0.5, 0.5, 18)
+        # limit action_rate
+        prev_actions += np.clip(actions - prev_actions, -action_rate, action_rate)
+        kp = 20
+        data.ctrl[:] = (prev_actions - data.qpos[-18:]) * kp
 
-        mj.mj_step(model, data)
-
-        vec_pointing_down = np.array([0, 0, -1])
-        base_quat = data.qpos[3:7]
-        gravity = np.array([0, 0, -9.81])
-        new_vec = np.zeros(3)
-        mj.mju_rotVecQuat(new_vec, vec_pointing_down, base_quat)
-        # print angle between vec_pointing_down and new_vec
-        test_vecs = np.array([[0, 0, -1], [0, 0, 1], [0, 1, 0], [1, 0, 0]])
-        print(test_vecs)
-        # test_vecs = np.array([0, 0, 1])
-        print(np.arccos(np.dot(test_vecs, vec_pointing_down) / (np.linalg.norm(test_vecs, axis=1) * np.linalg.norm(vec_pointing_down))))
+        mj.mj_step(model, data, decimation)
 
         # print sensor data
-        print("sensor data: ", data.sensordata)
+        # print("sensor data: ", data.sensordata)
 
         qposs.append((data.time, np.array(data.qpos.copy()), np.array(data.qvel.copy()), np.array(data.act.copy())))
 
-        print(len(qposs))
-
-        if len(qposs) > 10000:
-            with open('data.pkl', 'wb') as f:
-                pickle.dump(qposs, f)
-            break
+        # print(len(qposs))
 
         viewer.sync()
+
+        # wait for 0.002 seconds
+        while time.time() - prev_time < model.opt.timestep * decimation:
+            pass
+        prev_time = time.time()
 
         accum += 1
         if accum > 1000:
