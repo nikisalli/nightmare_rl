@@ -55,11 +55,11 @@ class NightmareV3Config(BaseConfig):
             height_measurements = 1.0
     
     class commands:
-        resampling_time = 10.
+        resampling_time = 5
         class ranges:
-            max_lin_vel_x = 0.1
-            max_lin_vel_y = 0.1
-            max_ang_vel = 0.25
+            max_lin_vel_x = 0.4
+            max_lin_vel_y = 0.4
+            max_ang_vel = 0.6
     
     class normalization:
         class obs_scales:
@@ -74,22 +74,22 @@ class NightmareV3Config(BaseConfig):
     class rewards:
         class scales:
             termination = -1.0
-            tracking_lin_vel = 1.0
-            tracking_ang_vel = 0.5
+            tracking_lin_vel = 10.0
+            tracking_ang_vel = 5.0
             lin_vel_z = -2.0
             ang_vel_xy = -0.05
             orientation = -0.
             torques = -0.00001
-            dof_vel = -0.005
-            dof_acc = -2.5e-7
+            dof_vel = -0.003
+            dof_acc = -1e-8
             base_height = -10.0
-            feet_air_time =  0.0 # 1.0
+            feet_air_time =  1.0
             # collision = -1.
             # feet_stumble = -0.0 
             action_rate = -0.01
-            stand_still = -0.
-            default_position = -1.0
-            feet_contact_forces = -1.0
+            stand_still = -1.0
+            default_position = -0.5
+            feet_contact_forces = -0.05
 
         tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)
         base_height_target = 0.1
@@ -127,7 +127,7 @@ class NightmareV3ConfigPPO(BaseConfig):
         policy_class_name = 'ActorCritic'
         algorithm_class_name = 'PPO'
         num_steps_per_env = 62 # per iteration
-        max_iterations = 1500 # number of policy updates
+        max_iterations = 1000000000 # number of policy updates
 
         # logging
         save_interval = 50 # check for potential saves every this many iterations

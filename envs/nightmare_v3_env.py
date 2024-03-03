@@ -79,6 +79,7 @@ class NightmareV3Env():
         self.commands = np.zeros((self.num_envs, 3))
         self.commands_scale = np.array([self.obs_scales.lin_vel, self.obs_scales.lin_vel, self.obs_scales.ang_vel])
         self.actions = np.zeros((self.num_envs, self.num_actions))
+        self.leg_contact_force_difference = np.zeros((self.num_envs, 6))
 
         self.dt = self.cfg.env.dt
         self.max_episode_length_s = self.cfg.env.episode_length_s
@@ -463,3 +464,9 @@ class NightmareV3Env():
     def _reward_default_position(self):
         # penalize distance from default position
         return np.sum(np.square(self.dof_pos - self.default_dof_pos), axis=1)
+
+    def _reward_contact_forces_difference(self):
+        # penalize difference in contact forces between legs
+        diff = self.contact_forces - np.mean(self.contact_forces, axis=1)[:, np.newaxis]
+        self.leg_contact_force_difference += diff
+        return np.sum(np.square(self.leg_contact_force_difference), axis=1)
