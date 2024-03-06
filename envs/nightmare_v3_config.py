@@ -75,8 +75,8 @@ class NightmareV3Config(BaseConfig):
     class rewards:
         class scales:
             termination = -200.0
-            tracking_lin_vel = 400.0
-            tracking_ang_vel = 20.0
+            tracking_lin_vel = 20.0
+            tracking_ang_vel = 10.0
             lin_vel_z = -2.0
             ang_vel_xy = -0.05
             dof_vel = 0.001
@@ -93,7 +93,7 @@ class NightmareV3Config(BaseConfig):
             collision = 0 # -1.
             feet_stumble = 0 # -0.0 
 
-        tracking_sigma = 0.00003 # tracking reward = exp(-error^2/sigma)
+        tracking_sigma = 0.003 # tracking reward = exp(-error^2/sigma)
         base_height_target = 0.1
         max_contact_force = 10. # forces above this value are penalized
     
@@ -128,7 +128,7 @@ class NightmareV3ConfigPPO(BaseConfig):
     class runner:
         policy_class_name = 'ActorCriticRecurrent' # 'ActorCritic'
         algorithm_class_name = 'PPO'
-        num_steps_per_env = 60 # per iteration
+        num_steps_per_env = 120 # per iteration
         max_iterations = 1000000000 # number of policy updates
 
         # logging
