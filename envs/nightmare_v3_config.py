@@ -75,8 +75,8 @@ class NightmareV3Config(BaseConfig):
     class rewards:
         class scales:
             termination = -200.0
-            tracking_lin_vel = 20.0
-            tracking_ang_vel = 10.0
+            tracking_lin_vel = 4.0
+            tracking_ang_vel = 2.0
             lin_vel_z = -2.0
             ang_vel_xy = -0.05
             dof_vel = 0.001
