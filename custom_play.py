@@ -62,10 +62,18 @@ with mj.viewer.launch_passive(model, data) as viewer:
 
         mj.mj_step(model, data, decimation)
 
+        base_quat = data.qpos[3:7]
+        neg_base_quat = np.zeros_like(base_quat)
+        mj.mju_negQuat(neg_base_quat, base_quat)
+        gravity = np.array([0, 0, -9.81])
+        projected_gravity = np.zeros_like(gravity)
+        mj.mju_rotVecQuat(projected_gravity, gravity, neg_base_quat)
+        print(np.sum(np.square(projected_gravity[:2])))
+
         # print sensor data
         # print("sensor data: ", data.sensordata)
 
-        qposs.append((data.time, np.array(data.qpos.copy()), np.array(data.qvel.copy()), np.array(data.act.copy())))
+        # qposs.append((data.time, np.array(data.qpos.copy()), np.array(data.qvel.copy()), np.array(data.act.copy())))
 
         # print(len(qposs))
 

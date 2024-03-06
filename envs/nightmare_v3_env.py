@@ -139,16 +139,12 @@ class NightmareV3Env():
             actions (np.array): Array of shape (num_envs, num_actions_per_env)
         """
 
-        time1 = time.time()
         clip_actions = self.cfg.normalization.clip_actions
         self.prev_actions = self.actions
         self.actions = np.clip(actions.cpu().numpy(), -clip_actions, clip_actions)
 
-        time2 = time.time()
         # step physics and render each frame
         self.render()
-
-        time3 = time.time()
 
         prev_dof_vel = self.dof_vel.copy()
 
@@ -159,13 +155,9 @@ class NightmareV3Env():
         self.limited_actions += np.clip(actions - self.limited_actions, -self.cfg.control.action_rate_limit, self.cfg.control.action_rate_limit)
         velocity_command = (self.limited_actions - self.dof_pos) * self.cfg.control.p_gain #  - self.cfg.control.d_gain * self.dof_vel
 
-        time4 = time.time()
-
         ### multi thread
         for env_id in range(self.num_envs):
             self.data[env_id].ctrl = velocity_command[env_id]
-
-        time5 = time.time()
 
         # python threading
         batch_size = self.num_envs // self.thread_num
@@ -185,46 +177,24 @@ class NightmareV3Env():
         for t in threads:
             t.join()
 
-        time6 = time.time()
-
         self.episode_length_buf += 1
         self.common_step_counter += 1
 
-        time7 = time.time()
-
         # update useful buffers
         for env_id in range(self.num_envs): mj.mju_negQuat(self.base_quat[env_id], self.data[env_id].qpos[3:7])
-        time8 = time.time()
         for env_id in range(self.num_envs): mj.mju_rotVecQuat(self.base_lin_vel[env_id], self.data[env_id].cvel[self.body_index][3:6], self.base_quat[env_id])
-        time9 = time.time()
-        time10 = time.time()
-        time11 = time.time()
-        time12 = time.time()
         for env_id in range(self.num_envs): self.base_ang_vel[env_id] = self.data[env_id].cvel[self.body_index][:3].copy()
-        time13 = time.time()
         for env_id in range(self.num_envs): mj.mju_rotVecQuat(self.projected_gravity[env_id], self.gravity_vec, self.base_quat[env_id])
-        time14 = time.time()
         for env_id in range(self.num_envs): self.dof_pos[env_id] = self.data[env_id].qpos[-18:].copy()
-        time15 = time.time()
         for env_id in range(self.num_envs): self.dof_vel[env_id] = self.data[env_id].qvel[-18:].copy()
-        time16 = time.time()
         for env_id in range(self.num_envs): self.torques[env_id] = self.data[env_id].qfrc_applied[-18:].copy()
-        
-        time17 = time.time()
         self.dof_acc = (self.dof_vel - prev_dof_vel) / self.dt
-
         for env_id in range(self.num_envs): self.base_heights[env_id] = self.data[env_id].xipos[1][2].copy()
-
-        time18 = time.time()
-        # update contact forces
         for env_id in range(self.num_envs): self.contact_forces[env_id] = self.data[env_id].sensordata[:6].copy()
 
-        time19 = time.time()
         # env_ids = np.nonzero(self.episode_length_buf_np % int(self.cfg.commands.resampling_time / self.dt) == 0)[0]
         env_ids = np.array(np.nonzero(self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt / self.cfg.control.decimation) == 0).flatten())
         self._resample_commands(env_ids)
-
-        time20 = time.time()
 
         # check for termination
         self.reset_buf = np.zeros_like(self.reset_buf)
@@ -257,8 +227,6 @@ class NightmareV3Env():
 
         self.reset_idx(env_ids)
 
-        time21 = time.time()
-
         # compute rewards
         self.rew_buf[:] = 0.
         for i in range(len(self.reward_functions)):
@@ -273,10 +241,6 @@ class NightmareV3Env():
             self.rew_buf += rew
             self.episode_sums["termination"] += rew
 
-        time22 = time.time()
-
-        time23 = time.time()
-
         # compute observations
         self.obs_buf = np.concatenate((self.base_lin_vel * self.obs_scales.lin_vel,
                                     self.base_ang_vel * self.obs_scales.ang_vel,
@@ -286,8 +250,6 @@ class NightmareV3Env():
                                     self.dof_vel * self.obs_scales.dof_vel,
                                     self.actions), axis=-1)
         
-        time24 = time.time()
-
         # add noise if needed
         if self.add_noise:
             self.obs_buf += (2 * np.random.rand(*self.obs_buf.shape) - 1) * self.noise_scale_vec
@@ -296,36 +258,7 @@ class NightmareV3Env():
         clip_obs = self.cfg.normalization.clip_observations
         self.obs_buf = np.clip(self.obs_buf, -clip_obs, clip_obs)
 
-        time25 = time.time()
-
-        # print(f"Time2 - Time1: {(time2 - time1) * 1000} ms")
-        # print(f"Time3 - Time2: {(time3 - time2) * 1000} ms")
-        # print(f"Time4 - Time3: {(time4 - time3) * 1000} ms")
-        # print(f"Time5 - Time4: {(time5 - time4) * 1000} ms")
-        # print(f"Time6 - Time5: {(time6 - time5) * 1000} ms")
-        # print(f"Time7 - Time6: {(time7 - time6) * 1000} ms")
-        # print(f"Time8 - Time7: {(time8 - time7) * 1000} ms")
-        # print(f"Time9 - Time8: {(time9 - time8) * 1000} ms")
-        # # print(f"Time10 - Time9: {(time10 - time9) * 1000} ms")
-        # # print(f"Time11 - Time10: {(time11 - time10) * 1000} ms")
-        # # print(f"Time12 - Time11: {(time12 - time11) * 1000} ms")
-        # print(f"Time13 - Time12: {(time13 - time12) * 1000} ms")
-        # print(f"Time14 - Time13: {(time14 - time13) * 1000} ms")
-        # print(f"Time15 - Time14: {(time15 - time14) * 1000} ms")
-        # print(f"Time16 - Time15: {(time16 - time15) * 1000} ms")
-        # print(f"Time17 - Time16: {(time17 - time16) * 1000} ms")
-        # print(f"Time18 - Time17: {(time18 - time17) * 1000} ms")
-        # print(f"Time19 - Time18: {(time19 - time18) * 1000} ms")
-        # print(f"Time20 - Time19: {(time20 - time19) * 1000} ms")
-        # print(f"Time21 - Time20: {(time21 - time20) * 1000} ms")
-        # print(f"Time22 - Time21: {(time22 - time21) * 1000} ms")
-        # print(f"Time23 - Time22: {(time23 - time22) * 1000} ms")
-        # print(f"Time24 - Time23: {(time24 - time23) * 1000} ms")
-        # print(f"Time25 - Time24: {(time25 - time24) * 1000} ms")
-    
-        # return tensors only
-        # return self.obs_buf, self.privileged_obs_buf, self.rew_buf, self.reset_buf, self.extras
-        return torch.tensor(self.obs_buf, dtype=torch.float32), None, torch.tensor(self.rew_buf, dtype=torch.float32), torch.tensor(self.reset_buf, dtype=torch.float32), self.extras
+        return torch.tensor(self.obs_buf, dtype=torch.float32), None, torch.tensor(self.rew_buf, dtype=torch.float32), torch.tensor(self.reset_buf, dtype=torch.long), self.extras
 
     def get_observations(self):
         # return self.obs_buf

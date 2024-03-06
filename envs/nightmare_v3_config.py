@@ -106,9 +106,9 @@ class NightmareV3ConfigPPO(BaseConfig):
         critic_hidden_dims = [512, 256, 128]
         activation = 'elu' # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
         # only for 'ActorCriticRecurrent':
-        # rnn_type = 'lstm'
-        # rnn_hidden_size = 512
-        # rnn_num_layers = 1
+        rnn_type = 'lstm'
+        rnn_hidden_size = 512
+        rnn_num_layers = 1
         
     class algorithm:
         # training params
@@ -126,7 +126,7 @@ class NightmareV3ConfigPPO(BaseConfig):
         max_grad_norm = 1.
 
     class runner:
-        policy_class_name = 'ActorCritic'
+        policy_class_name = 'ActorCriticRecurrent' # 'ActorCritic'
         algorithm_class_name = 'PPO'
         num_steps_per_env = 60 # per iteration
         max_iterations = 1000000000 # number of policy updates
