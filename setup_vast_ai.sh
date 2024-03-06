@@ -1,3 +1,5 @@
+cd ~/
+
 sudo apt update -y
 sudo apt upgrade -y
 
@@ -22,3 +24,5 @@ cd ..
 # git clone https://github.com/nikisalli/nightmare_rl
 cd nightmare_rl
 pip install -r requirements.txt
+pip uninstall -y torch
+pip install torch
