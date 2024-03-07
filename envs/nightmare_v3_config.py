@@ -93,7 +93,7 @@ class NightmareV3Config(BaseConfig):
             collision = 0 # -1.
             feet_stumble = 0 # -0.0 
 
-        tracking_sigma = 0.003 # tracking reward = exp(-error^2/sigma)
+        tracking_sigma = 0.008 # tracking reward = exp(-error^2/sigma)
         base_height_target = 0.1
         max_contact_force = 10. # forces above this value are penalized
     
@@ -109,6 +109,8 @@ class NightmareV3ConfigPPO(BaseConfig):
         rnn_type = 'lstm'
         rnn_hidden_size = 512
         rnn_num_layers = 1
+        # only for 'ActorCriticODE':
+        # dt = NightmareV3Config.env.dt * NightmareV3Config.control.decimation
         
     class algorithm:
         # training params
@@ -126,7 +128,7 @@ class NightmareV3ConfigPPO(BaseConfig):
         max_grad_norm = 1.
 
     class runner:
-        policy_class_name = 'ActorCriticRecurrent' # 'ActorCritic'
+        policy_class_name = 'ActorCriticRecurrent' # 'ActorCriticODE' # 'ActorCritic'
         algorithm_class_name = 'PPO'
         num_steps_per_env = 120 # per iteration
         max_iterations = 1000000000 # number of policy updates
