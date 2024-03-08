@@ -183,7 +183,7 @@ class NightmareV3Env():
         # update useful buffers
         for env_id in range(self.num_envs): mj.mju_negQuat(self.base_quat[env_id], self.data[env_id].qpos[3:7])
         for env_id in range(self.num_envs): mj.mju_rotVecQuat(self.base_lin_vel[env_id], self.data[env_id].cvel[self.body_index][3:6], self.base_quat[env_id])
-        for env_id in range(self.num_envs): self.base_ang_vel[env_id] = self.data[env_id].cvel[self.body_index][:3].copy()
+        for env_id in range(self.num_envs): mj.mju_rotVecQuat(self.base_ang_vel[env_id], self.data[env_id].cvel[self.body_index][:3], self.base_quat[env_id])
         for env_id in range(self.num_envs): mj.mju_rotVecQuat(self.projected_gravity[env_id], self.gravity_vec, self.base_quat[env_id])
         for env_id in range(self.num_envs): self.dof_pos[env_id] = self.data[env_id].qpos[-18:].copy()
         for env_id in range(self.num_envs): self.dof_vel[env_id] = self.data[env_id].qvel[-18:].copy()
@@ -193,7 +193,7 @@ class NightmareV3Env():
         for env_id in range(self.num_envs): self.contact_forces[env_id] = self.data[env_id].sensordata[:6].copy()
 
         # env_ids = np.nonzero(self.episode_length_buf_np % int(self.cfg.commands.resampling_time / self.dt) == 0)[0]
-        env_ids = np.array(np.nonzero(self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt / self.cfg.control.decimation) == 0).flatten())
+        env_ids = np.array(np.nonzero(self.episode_length_buf % int(self.cfg.commands.resampling_time / (self.dt * self.cfg.control.decimation)) == 0).flatten())
         self._resample_commands(env_ids)
 
         # check for termination
