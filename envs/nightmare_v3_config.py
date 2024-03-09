@@ -17,13 +17,13 @@ class NightmareV3Config(BaseConfig):
         body_name = 'base_link'
         # 0 do nothing, 1 penalize on contact, 2 terminate on contact
         coxa_contact_mode = 2
-        coxa_max_contact_force = 1.0
+        coxa_max_contact_force = 2.0
         femur_contact_mode = 2
-        femur_max_contact_force = 1.0
+        femur_max_contact_force = 2.0
         tibia_contact_mode = 2
-        tibia_max_contact_force = 1.0
+        tibia_max_contact_force = 2.0
         body_contact_mode = 2
-        body_max_contact_force = 1.0
+        body_max_contact_force = 2.0
         termination_contact_force = 50.0
 
     class viewer:
@@ -82,7 +82,7 @@ class NightmareV3Config(BaseConfig):
             dof_acc = -2.5e-7
             base_height = -50.0
             feet_air_time = 1.0
-            default_position = -0.005
+            default_position = -0.01
             feet_contact_forces = -0.05
             orientation = -0.05 # -0.
             body_contact_forces = -0.05 # -0.
@@ -106,9 +106,9 @@ class NightmareV3ConfigPPO(BaseConfig):
         critic_hidden_dims = [512, 256, 128]
         activation = 'elu' # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
         # only for 'ActorCriticRecurrent':
-        rnn_type = 'lstm'
-        rnn_hidden_size = 512
-        rnn_num_layers = 1
+        # rnn_type = 'lstm'
+        # rnn_hidden_size = 512
+        # rnn_num_layers = 1
         # only for 'ActorCriticODE':
         # dt = NightmareV3Config.env.dt * NightmareV3Config.control.decimation
         
@@ -128,7 +128,7 @@ class NightmareV3ConfigPPO(BaseConfig):
         max_grad_norm = 1.
 
     class runner:
-        policy_class_name = 'ActorCriticRecurrent' # 'ActorCriticODE' # 'ActorCritic'
+        policy_class_name = 'ActorCritic' # 'ActorCriticRecurrent' # 'ActorCriticODE'
         algorithm_class_name = 'PPO'
         num_steps_per_env = 120 # per iteration
         max_iterations = 1000000000 # number of policy updates
