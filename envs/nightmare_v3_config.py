@@ -14,17 +14,16 @@ class NightmareV3Config(BaseConfig):
         num_actions = 18
         episode_length_s = 20
         send_timeouts = True
-        feet_names = ['leg_1_foot', 'leg_2_foot', 'leg_3_foot', 'leg_4_foot', 'leg_5_foot', 'leg_6_foot']
         body_name = 'base_link'
-        termination_names = [
-            'leg_1_coxa', 'leg_1_femur', 'leg_1_tibia',
-            'leg_2_coxa', 'leg_2_femur', 'leg_2_tibia',
-            'leg_3_coxa', 'leg_3_femur', 'leg_3_tibia',
-            'leg_4_coxa', 'leg_4_femur', 'leg_4_tibia',
-            'leg_5_coxa', 'leg_5_femur', 'leg_5_tibia',
-            'leg_6_coxa', 'leg_6_femur', 'leg_6_tibia',
-            'body_link']
-        floor_name = 'floor'
+        # 0 do nothing, 1 penalize on contact, 2 terminate on contact
+        coxa_contact_mode = 2
+        coxa_max_contact_force = 1.0
+        femur_contact_mode = 2
+        femur_max_contact_force = 1.0
+        tibia_contact_mode = 2
+        tibia_max_contact_force = 1.0
+        body_contact_mode = 2
+        body_max_contact_force = 1.0
         termination_contact_force = 50.0
 
     class viewer:
@@ -75,17 +74,18 @@ class NightmareV3Config(BaseConfig):
     class rewards:
         class scales:
             termination = -200.0
-            tracking_lin_vel = 4.0
-            tracking_ang_vel = 2.0
+            tracking_lin_vel = 1
+            tracking_ang_vel = 0.5
             lin_vel_z = -2.0
             ang_vel_xy = -0.05
-            dof_vel = 0.001
+            dof_vel = -0.001
             dof_acc = -2.5e-7
             base_height = -50.0
             feet_air_time = 1.0
             default_position = -0.005
             feet_contact_forces = -0.05
             orientation = -0.05 # -0.
+            body_contact_forces = -0.05 # -0.
 
             stand_still = 0 # -1.0
             action_rate = 0 # -0.01

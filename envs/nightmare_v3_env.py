@@ -36,19 +36,12 @@ class NightmareV3Env():
 
         self.gravity_vec = np.array([0., 0., -9.81])
 
-        # self.termination_contact_geom_indices = [mj.mj_name2id(self.model, mj.mjtObj.mjOBJ_GEOM, name) for name in self.cfg.env.termination_names]
-        # self.floor_geom_index = mj.mj_name2id(self.model, mj.mjtObj.mjOBJ_GEOM, self.cfg.env.floor_name)
-        # self.body_geom_index = mj.mj_name2id(self.model, mj.mjtObj.mjOBJ_GEOM, self.cfg.env.body_name)
         self.body_index = mj.mj_name2id(self.model, mj.mjtObj.mjOBJ_BODY, self.cfg.env.body_name)
 
-        # print("Termination contact geom indices: ", self.termination_contact_geom_indices)
-        # print("Floor geom index: ", self.floor_geom_index)
         print("Body geom index: ", self.body_index)
 
         # check no index is -1
-        # assert all([index != -1 for index in self.termination_contact_geom_indices])
-        # assert self.floor_geom_index != -1
-        # assert self.body_geom_index != -1
+        assert self.body_index != -1
 
         # useful buffers
         self.base_quat = np.zeros((self.num_envs, 4))
@@ -57,10 +50,15 @@ class NightmareV3Env():
         self.projected_gravity = np.zeros((self.num_envs, 3))
         self.dof_pos = np.zeros((self.num_envs, self.num_dof))
         self.dof_vel = np.zeros((self.num_envs, self.num_dof))
-        self.contact_forces = np.zeros((self.num_envs, len(self.cfg.env.feet_names)))
         self.torques = np.zeros((self.num_envs, self.num_dof))
         self.prev_actions = np.zeros((self.num_envs, self.num_actions))
         self.base_heights = np.zeros(self.num_envs)
+
+        self.feet_contact_forces = np.zeros((self.num_envs, 6))
+        self.coxa_contact_forces = np.zeros((self.num_envs, 6))
+        self.femur_contact_forces = np.zeros((self.num_envs, 6))
+        self.tibia_contact_forces = np.zeros((self.num_envs, 6))
+        self.body_contact_force = np.zeros(self.num_envs)
 
         if self.cfg.viewer.render:
             self.viewer = mjv.launch_passive(self.model, self.data[0])
@@ -190,7 +188,15 @@ class NightmareV3Env():
         for env_id in range(self.num_envs): self.torques[env_id] = self.data[env_id].qfrc_applied[-18:].copy()
         self.dof_acc = (self.dof_vel - prev_dof_vel) / self.dt
         for env_id in range(self.num_envs): self.base_heights[env_id] = self.data[env_id].xipos[1][2].copy()
-        for env_id in range(self.num_envs): self.contact_forces[env_id] = self.data[env_id].sensordata[:6].copy()
+        for env_id in range(self.num_envs): self.coxa_contact_forces[env_id] = self.data[env_id].sensordata[:6].copy()
+        for env_id in range(self.num_envs): self.femur_contact_forces[env_id] = self.data[env_id].sensordata[6:12].copy()
+        for env_id in range(self.num_envs): self.tibia_contact_forces[env_id] = self.data[env_id].sensordata[12:18].copy()
+        for env_id in range(self.num_envs): self.feet_contact_forces[env_id] = self.data[env_id].sensordata[18:24].copy()
+        for env_id in range(self.num_envs): self.body_contact_force[env_id] = self.data[env_id].sensordata[24].copy()
+
+        # make tibia contact forces zero if the corresponding foot force is not zero
+        # because the tibia site contains the foot site
+        self.tibia_contact_forces *= (self.feet_contact_forces == 0)
 
         # env_ids = np.nonzero(self.episode_length_buf_np % int(self.cfg.commands.resampling_time / self.dt) == 0)[0]
         env_ids = np.array(np.nonzero(self.episode_length_buf % int(self.cfg.commands.resampling_time / (self.dt * self.cfg.control.decimation)) == 0).flatten())
@@ -203,8 +209,17 @@ class NightmareV3Env():
         # self.time_out_buf = self.episode_length_buf_np > self.max_episode_length # no terminal reward for time-outs
         self.time_out_buf = np.array(self.episode_length_buf) > self.max_episode_length # no terminal reward for time-outs
         self.reset_buf |= self.time_out_buf
-        # check feet contact forces too high
-        self.reset_buf |= self.contact_forces[:, :6].max(axis=1) > self.cfg.env.termination_contact_force
+        # check feet contact forces too high on feet
+        self.reset_buf |= self.feet_contact_forces[:, :6].max(axis=1) > self.cfg.env.termination_contact_force
+        # check contact forces too high on legs
+        if self.cfg.env.coxa_contact_mode == 2:
+            self.reset_buf |= self.coxa_contact_forces.max(axis=1) > self.cfg.env.coxa_max_contact_force
+        if self.cfg.env.femur_contact_mode == 2:
+            self.reset_buf |= self.femur_contact_forces.max(axis=1) > self.cfg.env.femur_max_contact_force
+        if self.cfg.env.tibia_contact_mode == 2:
+            self.reset_buf |= self.tibia_contact_forces.max(axis=1) > self.cfg.env.tibia_max_contact_force
+        if self.cfg.env.body_contact_mode == 2:
+            self.reset_buf |= self.body_contact_force > self.cfg.env.body_max_contact_force
         # check robot not upside down
         max_angle = 60 * np.pi / 180 # 60 degrees
         vec_pointing_down = np.array([0, 0, -1])
@@ -223,6 +238,8 @@ class NightmareV3Env():
                 # save states in file like unixtimestamp.pkl
                 with open(f"{self.log_dir}/{int(time.time())}.pkl", "wb") as f:
                     pickle.dump(self.recorded_states, f)
+                # clear recorded states
+                self.recorded_states = []
             self.recorded_states.append((self.data[0].time, self.data[0].qpos.copy(), self.data[0].qvel.copy(), self.data[0].act.copy()))
 
         self.reset_idx(env_ids)
@@ -392,14 +409,26 @@ class NightmareV3Env():
     def _reward_feet_air_time(self):
         # Reward long steps
         # Need to filter the contacts because the contact reporting of PhysX is unreliable on meshes
-        contact_filt = np.logical_or(self.contact_forces > 0.5, self.last_contacts)
-        self.last_contacts = self.contact_forces
+        contact_filt = np.logical_or(self.feet_contact_forces > 0.5, self.last_contacts)
+        self.last_contacts = self.feet_contact_forces
         first_contact = (self.feet_air_time > 0.) * contact_filt
         self.feet_air_time += self.dt
         rew_airTime = np.sum((self.feet_air_time - 0.5) * first_contact, axis=1) # reward only on first contact with the ground
         rew_airTime *= np.linalg.norm(self.commands[:, :2], axis=1) > 0.01 #no reward for zero command
         self.feet_air_time *= ~contact_filt
         return rew_airTime
+    
+    def _reward_body_contact_forces(self):
+        rew = np.zeros(self.num_envs)
+        if self.cfg.env.coxa_contact_mode == 1:
+            rew += np.sum(self.coxa_contact_forces, axis=1)
+        if self.cfg.env.femur_contact_mode == 1:
+            rew += np.sum(self.femur_contact_forces, axis=1)
+        if self.cfg.env.tibia_contact_mode == 1:
+            rew += np.sum(self.tibia_contact_forces, axis=1)
+        if self.cfg.env.body_contact_mode == 1:
+            rew += self.body_contact_force
+        return rew
 
     def _reward_stand_still(self):
         # Penalize motion at zero commands
@@ -407,14 +436,8 @@ class NightmareV3Env():
 
     def _reward_feet_contact_forces(self):
         # penalize high contact forces
-        return np.sum(((self.contact_forces - self.cfg.rewards.max_contact_force) * (self.contact_forces > self.cfg.rewards.max_contact_force))**2, axis=1)
+        return np.sum(((self.feet_contact_forces - self.cfg.rewards.max_contact_force) * (self.feet_contact_forces > self.cfg.rewards.max_contact_force))**2, axis=1)
     
     def _reward_default_position(self):
         # penalize distance from default position
         return np.sum(np.square(self.dof_pos - self.default_dof_pos), axis=1)
-
-    def _reward_contact_forces_difference(self):
-        # penalize difference in contact forces between legs
-        diff = self.contact_forces - np.mean(self.contact_forces, axis=1)[:, np.newaxis]
-        self.leg_contact_force_difference += diff
-        return np.sum(np.square(self.leg_contact_force_difference), axis=1)
