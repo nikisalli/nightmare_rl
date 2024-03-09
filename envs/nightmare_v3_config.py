@@ -57,9 +57,9 @@ class NightmareV3Config(BaseConfig):
     class commands:
         resampling_time = 10
         class ranges:
-            max_lin_vel_x = 0.2
-            max_lin_vel_y = 0.2
-            max_ang_vel = 0.4
+            max_lin_vel_x = 0.3
+            max_lin_vel_y = 0.3
+            max_ang_vel = 0.6
     
     class normalization:
         class obs_scales:
@@ -76,19 +76,19 @@ class NightmareV3Config(BaseConfig):
             termination = -2000.0
             tracking_lin_vel = 1
             tracking_ang_vel = 0.5
-            lin_vel_z = -2.0
             ang_vel_xy = -0.05
-            dof_vel = -0.001
-            dof_acc = -1e-6
-            base_height = -50.0
-            feet_air_time = 1.0
-            default_position = -0.01
-            feet_contact_forces = -0.05
             orientation = -0.05 # -0.
+            dof_acc = -1e-6
+            dof_vel = -0.001
+            action_rate = -0.01
+            base_height = -50.0
+            feet_contact_forces = -0.05
             body_contact_forces = -5 # -0.
 
+            default_position = 0 # -0.01
+            lin_vel_z = 0 # -2.0
+            feet_air_time = 0 # 1.0
             stand_still = 0 # -1.0
-            action_rate = 0 # -0.01
             torques = 0 # -0.00001
             collision = 0 # -1.
             feet_stumble = 0 # -0.0 
@@ -106,9 +106,9 @@ class NightmareV3ConfigPPO(BaseConfig):
         critic_hidden_dims = [512, 256, 128]
         activation = 'elu' # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
         # only for 'ActorCriticRecurrent':
-        rnn_type = 'lstm'
-        rnn_hidden_size = 512
-        rnn_num_layers = 1
+        # rnn_type = 'lstm'
+        # rnn_hidden_size = 512
+        # rnn_num_layers = 1
         # only for 'ActorCriticODE':
         # dt = NightmareV3Config.env.dt * NightmareV3Config.control.decimation
         
@@ -117,7 +117,7 @@ class NightmareV3ConfigPPO(BaseConfig):
         value_loss_coef = 1.0
         use_clipped_value_loss = True
         clip_param = 0.2
-        entropy_coef = 0.003
+        entropy_coef = 0.002
         num_learning_epochs = 5
         num_mini_batches = 4 # mini batch size = num_envs*nsteps / nminibatches
         learning_rate = 1.e-3 #5.e-4
@@ -128,7 +128,7 @@ class NightmareV3ConfigPPO(BaseConfig):
         max_grad_norm = 1.
 
     class runner:
-        policy_class_name = 'ActorCriticRecurrent' # 'ActorCriticODE' # 'ActorCritic'
+        policy_class_name = 'ActorCritic' # 'ActorCriticRecurrent' # 'ActorCriticODE'
         algorithm_class_name = 'PPO'
         num_steps_per_env = 60 # per iteration
         max_iterations = 1000000000 # number of policy updates
