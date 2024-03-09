@@ -86,7 +86,7 @@ class NightmareV3Env():
 
         self.dt = self.cfg.env.dt
         self.max_episode_length_s = self.cfg.env.episode_length_s
-        self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
+        self.max_episode_length = np.ceil(self.max_episode_length_s / (self.dt * self.cfg.control.decimation))
 
         self.default_dof_pos = np.array(self.cfg.control.default_pos, dtype=np.float64)
 
@@ -186,7 +186,7 @@ class NightmareV3Env():
         for env_id in range(self.num_envs): self.dof_pos[env_id] = self.data[env_id].qpos[-18:].copy()
         for env_id in range(self.num_envs): self.dof_vel[env_id] = self.data[env_id].qvel[-18:].copy()
         for env_id in range(self.num_envs): self.torques[env_id] = self.data[env_id].qfrc_applied[-18:].copy()
-        self.dof_acc = (self.dof_vel - prev_dof_vel) / self.dt
+        self.dof_acc = (self.dof_vel - prev_dof_vel) / (self.dt * self.cfg.control.decimation)
         for env_id in range(self.num_envs): self.base_heights[env_id] = self.data[env_id].xipos[1][2].copy()
         for env_id in range(self.num_envs): self.coxa_contact_forces[env_id] = self.data[env_id].sensordata[:6].copy()
         for env_id in range(self.num_envs): self.femur_contact_forces[env_id] = self.data[env_id].sensordata[6:12].copy()
