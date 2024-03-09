@@ -15,6 +15,14 @@ import os
 # print(mj.mj_step_threaded)
 import torch
 
+def modified_hopf_oscillator(x, y, alpha, beta, mu, w):
+    dx = alpha * (mu**2 - x**2 - y**2) * x - w*y
+    dy = beta * (mu**2 - x**2 - y**2) * y + w*x
+    return dx, dy
+
+def rotate(xs, ys, angle):
+    return xs * np.cos(angle) - ys * np.sin(angle), xs * np.sin(angle) + ys * np.cos(angle)
+
 class NightmareV3Env():
     def __init__(self, cfg: NightmareV3Config, log_dir="/tmp/nightmare_v3/logs", num_threads=1):
         self.cfg = cfg
@@ -34,6 +42,8 @@ class NightmareV3Env():
         self.num_geoms = self.model.ngeom
         print("Number of DoF: ", self.num_dof)
 
+        self.num_oscillators = self.num_actions - self.num_dof
+
         self.gravity_vec = np.array([0., 0., -9.81])
 
         self.body_index = mj.mj_name2id(self.model, mj.mjtObj.mjOBJ_BODY, self.cfg.env.body_name)
@@ -51,7 +61,7 @@ class NightmareV3Env():
         self.dof_pos = np.zeros((self.num_envs, self.num_dof))
         self.dof_vel = np.zeros((self.num_envs, self.num_dof))
         self.torques = np.zeros((self.num_envs, self.num_dof))
-        self.prev_actions = np.zeros((self.num_envs, self.num_actions))
+        self.prev_actions = np.zeros((self.num_envs, self.num_actions - self.num_oscillators))
         self.base_heights = np.zeros(self.num_envs)
 
         self.feet_contact_forces = np.zeros((self.num_envs, 6))
@@ -59,6 +69,10 @@ class NightmareV3Env():
         self.femur_contact_forces = np.zeros((self.num_envs, 6))
         self.tibia_contact_forces = np.zeros((self.num_envs, 6))
         self.body_contact_force = np.zeros(self.num_envs)
+
+        # start from random values in rane 1 to -1
+        self.oscillator_xs = np.random.rand(self.num_envs, self.num_oscillators) * 2 - 1
+        self.oscillator_ys = np.random.rand(self.num_envs, self.num_oscillators) * 2 - 1
 
         if self.cfg.viewer.render:
             self.viewer = mjv.launch_passive(self.model, self.data[0])
@@ -81,10 +95,10 @@ class NightmareV3Env():
         self.last_contacts = np.zeros((self.num_envs, 6), dtype=bool)
         self.commands = np.zeros((self.num_envs, 3))
         self.commands_scale = np.array([self.obs_scales.lin_vel, self.obs_scales.lin_vel, self.obs_scales.ang_vel])
-        self.actions = np.zeros((self.num_envs, self.num_actions))
-        self.limited_actions = np.zeros((self.num_envs, self.num_actions))
+        self.actions = np.zeros((self.num_envs, self.num_actions - self.num_oscillators))
+        self.limited_actions = np.zeros((self.num_envs, self.num_actions - self.num_oscillators))
 
-        self.dt = self.cfg.env.dt
+        self.dt = self.cfg.env.dt * self.cfg.control.decimation
         self.max_episode_length_s = self.cfg.env.episode_length_s
         self.max_episode_length = np.ceil(self.max_episode_length_s / (self.dt * self.cfg.control.decimation))
 
@@ -139,18 +153,40 @@ class NightmareV3Env():
 
         clip_actions = self.cfg.normalization.clip_actions
         self.prev_actions = self.actions
-        self.actions = np.clip(actions.cpu().numpy(), -clip_actions, clip_actions)
+        # first 18 actions are for the 18 DoFs
+        all_actions = np.array(actions.cpu().numpy()) * self.cfg.control.action_scale
+        self.actions = np.array(np.clip(all_actions[:, :18], -clip_actions, clip_actions))[:, :18]
+        self.cpg_actions = np.clip(all_actions[:, 18:], self.cfg.oscillators.min_freq, self.cfg.oscillators.max_freq)
+
+        # divide cpq actions in frequency and phase
+        self.oscillator_freqs = self.cpg_actions[:, :self.num_oscillators]
+        # self.oscillator_freqs = np.zeros_like(self.cpg_actions) + 2
+        # self.oscillator_phases = self.cpg_actions[:, self.num_oscillators:]
+
+        # update oscillators
+        dxs, dys = modified_hopf_oscillator(
+            self.oscillator_xs,
+            self.oscillator_ys,
+            self.cfg.oscillators.a,
+            self.cfg.oscillators.b,
+            self.cfg.oscillators.mu,
+            self.oscillator_freqs
+        )
+        self.oscillator_xs += dxs * 0.01
+        self.oscillator_ys += dys * 0.01
+
+        # print("dxs: ", self.oscillator_xs[0][0], "dys: ", self.oscillator_ys[0][0], "freq: ", self.oscillator_freqs[0][0])
 
         # step physics and render each frame
         self.render()
 
         prev_dof_vel = self.dof_vel.copy()
 
-        actions = np.array(self.actions) * self.cfg.control.action_scale - self.default_dof_pos
+        dof_actions = self.actions - self.default_dof_pos
         # self.time += self.dt * self.cfg.control.decimation
         # set_time_s(self.time)
         # actions = np.array([self.engine_nodes[i].update(self.commands[i, 0], self.commands[i, 2], 'awake', 'walk') for i in range(self.num_envs)])
-        self.limited_actions += np.clip(actions - self.limited_actions, -self.cfg.control.action_rate_limit, self.cfg.control.action_rate_limit)
+        self.limited_actions += np.clip(dof_actions - self.limited_actions, -self.cfg.control.action_rate_limit, self.cfg.control.action_rate_limit)
         velocity_command = (self.limited_actions - self.dof_pos) * self.cfg.control.p_gain #  - self.cfg.control.d_gain * self.dof_vel
 
         ### multi thread
@@ -186,7 +222,7 @@ class NightmareV3Env():
         for env_id in range(self.num_envs): self.dof_pos[env_id] = self.data[env_id].qpos[-18:].copy()
         for env_id in range(self.num_envs): self.dof_vel[env_id] = self.data[env_id].qvel[-18:].copy()
         for env_id in range(self.num_envs): self.torques[env_id] = self.data[env_id].qfrc_applied[-18:].copy()
-        self.dof_acc = (self.dof_vel - prev_dof_vel) / (self.dt * self.cfg.control.decimation)
+        self.dof_acc = (self.dof_vel - prev_dof_vel) / self.dt
         for env_id in range(self.num_envs): self.base_heights[env_id] = self.data[env_id].xipos[1][2].copy()
         for env_id in range(self.num_envs): self.coxa_contact_forces[env_id] = self.data[env_id].sensordata[:6].copy()
         for env_id in range(self.num_envs): self.femur_contact_forces[env_id] = self.data[env_id].sensordata[6:12].copy()
@@ -199,7 +235,7 @@ class NightmareV3Env():
         self.tibia_contact_forces *= (self.feet_contact_forces == 0)
 
         # env_ids = np.nonzero(self.episode_length_buf_np % int(self.cfg.commands.resampling_time / self.dt) == 0)[0]
-        env_ids = np.array(np.nonzero(self.episode_length_buf % int(self.cfg.commands.resampling_time / (self.dt * self.cfg.control.decimation)) == 0).flatten())
+        env_ids = np.array(np.nonzero(self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt) == 0).flatten())
         self._resample_commands(env_ids)
 
         # check for termination
@@ -259,13 +295,17 @@ class NightmareV3Env():
             self.episode_sums["termination"] += rew
 
         # compute observations
-        self.obs_buf = np.concatenate((self.base_lin_vel * self.obs_scales.lin_vel,
-                                    self.base_ang_vel * self.obs_scales.ang_vel,
-                                    self.projected_gravity,
-                                    self.commands[:, :3] * self.commands_scale,
-                                    (self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos,
-                                    self.dof_vel * self.obs_scales.dof_vel,
-                                    self.actions), axis=-1)
+        self.obs_buf = np.concatenate((
+            self.base_lin_vel * self.obs_scales.lin_vel,
+            self.base_ang_vel * self.obs_scales.ang_vel,
+            self.projected_gravity,
+            self.commands[:, :3] * self.commands_scale,
+            (self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos,
+            self.dof_vel * self.obs_scales.dof_vel,
+            self.actions,
+            self.oscillator_xs,
+            self.oscillator_ys
+        ), axis=-1)
         
         # add noise if needed
         if self.add_noise:
@@ -292,7 +332,8 @@ class NightmareV3Env():
             env_ids (List[int]): Environments ids for which new commands are needed
         """
         self.commands[env_ids, 0] = np.random.rand(len(env_ids)) * 2 * self.command_ranges.max_lin_vel_x - self.command_ranges.max_lin_vel_x
-        self.commands[env_ids, 1] = np.random.rand(len(env_ids)) * 2 * self.command_ranges.max_lin_vel_y - self.command_ranges.max_lin_vel_y
+        # self.commands[env_ids, 1] = np.random.rand(len(env_ids)) * 2 * self.command_ranges.max_lin_vel_y - self.command_ranges.max_lin_vel_y
+        self.commands[env_ids, 1] = 0
         self.commands[env_ids, 2] = np.random.rand(len(env_ids)) * 2 * self.command_ranges.max_ang_vel - self.command_ranges.max_ang_vel
 
         # set small commands to zero
@@ -314,6 +355,10 @@ class NightmareV3Env():
         for env_id in env_ids:
             self.data[env_id].qpos = self.model.qpos0
             self.data[env_id].qvel = 0
+            
+            # reset oscillator states
+            # self.oscillator_xs[env_id] = np.random.rand(self.num_oscillators) * 2 - 1
+            # self.oscillator_ys[env_id] = np.random.rand(self.num_oscillators) * 2 - 1
 
         self._resample_commands(env_ids)
 

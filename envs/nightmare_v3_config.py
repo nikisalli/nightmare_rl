@@ -9,9 +9,9 @@ class NightmareV3Config(BaseConfig):
         dt = 0.005
         model_path = 'models/nightmare_v3/mjmodel.xml'
         num_envs = 8192
-        num_obs = 66
+        num_obs = 78 # 66
         num_privileged_obs = 0
-        num_actions = 18
+        num_actions = 24 # 18
         episode_length_s = 20
         send_timeouts = True
         body_name = 'base_link'
@@ -25,6 +25,13 @@ class NightmareV3Config(BaseConfig):
         body_contact_mode = 2
         body_max_contact_force = 2.0
         termination_contact_force = 50.0
+    
+    class oscillators:
+        a = 1.0
+        b = 1.0
+        mu = 1.0
+        max_freq = 3.0
+        min_freq = 0.4
 
     class viewer:
         render = True
@@ -41,7 +48,7 @@ class NightmareV3Config(BaseConfig):
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0]
         decimation = 4
-        action_scale = 1.0
+        action_scale = 0.2
 
     class noise:
         add_noise = False
@@ -130,7 +137,7 @@ class NightmareV3ConfigPPO(BaseConfig):
     class runner:
         policy_class_name = 'ActorCritic' # 'ActorCriticRecurrent' # 'ActorCriticODE'
         algorithm_class_name = 'PPO'
-        num_steps_per_env = 60 # per iteration
+        num_steps_per_env = 80 # per iteration
         max_iterations = 1000000000 # number of policy updates
 
         # logging
