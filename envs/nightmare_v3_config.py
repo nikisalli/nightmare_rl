@@ -30,8 +30,8 @@ class NightmareV3Config(BaseConfig):
         a = 1.0
         b = 1.0
         mu = 1.0
-        max_freq = 3.0
-        min_freq = 0.4
+        max_freq = 9.0
+        min_freq = 2.0
 
     class viewer:
         render = True
@@ -39,15 +39,15 @@ class NightmareV3Config(BaseConfig):
 
     class control:
         p_gain = 20
-        d_gain = 0.05
-        action_rate_limit = 0.08
+        # d_gain = 0.05
+        # action_rate_limit = 0.08
         default_pos = [0, np.pi / 5, 0, 
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0]
-        decimation = 4
+        decimation = 12
         action_scale = 0.2
 
     class noise:
@@ -124,7 +124,7 @@ class NightmareV3ConfigPPO(BaseConfig):
         value_loss_coef = 1.0
         use_clipped_value_loss = True
         clip_param = 0.2
-        entropy_coef = 0.002
+        entropy_coef = 0.001
         num_learning_epochs = 5
         num_mini_batches = 4 # mini batch size = num_envs*nsteps / nminibatches
         learning_rate = 1.e-3 #5.e-4

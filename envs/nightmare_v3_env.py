@@ -186,8 +186,8 @@ class NightmareV3Env():
         # self.time += self.dt * self.cfg.control.decimation
         # set_time_s(self.time)
         # actions = np.array([self.engine_nodes[i].update(self.commands[i, 0], self.commands[i, 2], 'awake', 'walk') for i in range(self.num_envs)])
-        self.limited_actions += np.clip(dof_actions - self.limited_actions, -self.cfg.control.action_rate_limit, self.cfg.control.action_rate_limit)
-        velocity_command = (self.limited_actions - self.dof_pos) * self.cfg.control.p_gain #  - self.cfg.control.d_gain * self.dof_vel
+        # self.limited_actions += np.clip(dof_actions - self.limited_actions, -self.cfg.control.action_rate_limit, self.cfg.control.action_rate_limit)
+        velocity_command = (dof_actions - self.dof_pos) * self.cfg.control.p_gain #  - self.cfg.control.d_gain * self.dof_vel
 
         ### multi thread
         for env_id in range(self.num_envs):
