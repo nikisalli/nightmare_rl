@@ -223,13 +223,14 @@ class NightmareV3Env():
         for env_id in range(self.num_envs): self.dof_pos[env_id] = self.data[env_id].qpos[-18:].copy()
         for env_id in range(self.num_envs): self.dof_vel[env_id] = self.data[env_id].qvel[-18:].copy()
         for env_id in range(self.num_envs): self.torques[env_id] = self.data[env_id].qfrc_applied[-18:].copy()
-        self.dof_acc = (self.dof_vel - prev_dof_vel) / self.dt
         for env_id in range(self.num_envs): self.base_heights[env_id] = self.data[env_id].xipos[1][2].copy()
         for env_id in range(self.num_envs): self.coxa_contact_forces[env_id] = self.data[env_id].sensordata[:6].copy()
         for env_id in range(self.num_envs): self.femur_contact_forces[env_id] = self.data[env_id].sensordata[6:12].copy()
         for env_id in range(self.num_envs): self.tibia_contact_forces[env_id] = self.data[env_id].sensordata[12:18].copy()
         for env_id in range(self.num_envs): self.feet_contact_forces[env_id] = self.data[env_id].sensordata[18:24].copy()
         for env_id in range(self.num_envs): self.body_contact_force[env_id] = self.data[env_id].sensordata[24].copy()
+
+        self.dof_acc = (self.dof_vel - prev_dof_vel) / self.dt
 
         # make tibia contact forces zero if the corresponding foot force is not zero
         # because the tibia site contains the foot site
