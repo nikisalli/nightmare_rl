@@ -10,11 +10,13 @@ parser.add_argument("-r", "--resume", action="store_true", help="Resume training
 parser.add_argument("-v", "--render", action="store_true", help="Render the environment", default=False, dest="render")
 parser.add_argument("-n", "--num_threads", type=int, help="Number of threads to use", default=1, dest="num_threads")
 parser.add_argument("-e", "--envs", type=int, help="Number of environments to use", default=2048, dest="num_envs")
+parser.add_argument("-p", "--resume_path", type=str, help="Path to the checkpoint to resume from", default=None, dest="resume_path")
 
 args = parser.parse_args()
 resume = args.resume
 render = args.render
 num_threads = args.num_threads
+resume_path = args.resume_path
 
 print(f"Resume: {resume}, Render: {render}, Num threads: {num_threads}")
 
@@ -41,8 +43,11 @@ resume = train_cfg.runner.resume
 load_run = train_cfg.runner.load_run
 checkpoint = train_cfg.runner.checkpoint
 
+resume_path = resume_path if resume_path is not None else log_root
+print(f"Resuming from: {resume_path}")
+
 if resume:
-    resume_path = get_load_path(log_root, load_run=train_cfg.runner.load_run, checkpoint=train_cfg.runner.checkpoint)
+    resume_path = get_load_path(resume_path, load_run=train_cfg.runner.load_run, checkpoint=train_cfg.runner.checkpoint)
     print(f"Loading model from: {resume_path}")
     runner.load(resume_path)
 
