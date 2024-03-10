@@ -93,6 +93,7 @@ class NightmareV3Env():
         self.feet_air_time = np.zeros((self.num_envs, 6))
         self.leg_contact_force_difference = np.zeros((self.num_envs, 6))
         self.last_contacts = np.zeros((self.num_envs, 6), dtype=bool)
+        self.last_contacts_filt = np.zeros((self.num_envs, 6), dtype=bool)
         self.commands = np.zeros((self.num_envs, 3))
         self.commands_scale = np.array([self.obs_scales.lin_vel, self.obs_scales.lin_vel, self.obs_scales.ang_vel])
         self.actions = np.zeros((self.num_envs, self.num_actions - self.num_oscillators))
@@ -454,14 +455,34 @@ class NightmareV3Env():
     def _reward_feet_air_time(self):
         # Reward long steps
         # Need to filter the contacts because the contact reporting of PhysX is unreliable on meshes
-        contact_filt = np.logical_or(self.feet_contact_forces > 0.5, self.last_contacts)
-        self.last_contacts = self.feet_contact_forces
-        first_contact = (self.feet_air_time > 0.) * contact_filt
+        # contact_filt = np.logical_or(self.feet_contact_forces > 2.0, self.last_contacts)
+        # self.last_contacts = self.feet_contact_forces > 2.0
+        # first_contact = (self.feet_air_time > 0.) * contact_filt
+        # self.feet_air_time += self.dt
+        # rew_airTime = np.sum((self.feet_air_time - 0.5) * first_contact, axis=1) # reward only on first contact with the ground
+        # rew_airTime *= np.linalg.norm(self.commands[:, :2], axis=1) > 0.01 #no reward for zero command
+        # self.feet_air_time *= ~contact_filt
+        # return rew_airTime
+
+        # Reward long steps shorter than 1s (to avoid reward for standing still) and longer than 0.5s
+        contact = self.feet_contact_forces > 1.0
+        contact_filt = np.logical_or(contact, self.last_contacts)
+
         self.feet_air_time += self.dt
-        rew_airTime = np.sum((self.feet_air_time - 0.5) * first_contact, axis=1) # reward only on first contact with the ground
-        rew_airTime *= np.linalg.norm(self.commands[:, :2], axis=1) > 0.01 #no reward for zero command
-        self.feet_air_time *= ~contact_filt
-        return rew_airTime
+        self.feet_air_time *= contact_filt == self.last_contacts_filt # reset air time if contact changes
+
+        self.last_contacts = contact
+        self.last_contacts_filt = contact_filt
+        # if airtime longer than 1s penalize
+        airtime_longer_than_1s = self.feet_air_time > 1.
+        # if airtime shorter than 0.5s penalize
+        airtime_shorter_than_0_5s = self.feet_air_time < 0.5
+
+        # is command zero
+        # is_command_zero = np.linalg.norm(self.commands[:, :2], axis=1) < 0.05
+
+        single_foot_reward = airtime_longer_than_1s * (self.feet_air_time - 1.) + airtime_shorter_than_0_5s * (0.5 - self.feet_air_time)
+        return np.square(np.sum(single_foot_reward, axis=1))
     
     def _reward_body_contact_forces(self):
         rew = np.zeros(self.num_envs)

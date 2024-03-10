@@ -86,6 +86,7 @@ class NightmareV3Config(BaseConfig):
             dof_acc = -2.5e-5
             action_rate = -0.02
             body_contact_forces = -5 # -0.
+            feet_air_time = -2.0
 
             orientation = 0 # -0.05 # -0.
             base_height = 0 # -200.0
@@ -94,7 +95,6 @@ class NightmareV3Config(BaseConfig):
             dof_vel = 0 # -0.001
             default_position = 0 # -0.01
             lin_vel_z = 0 # -2.0
-            feet_air_time = 0 # 1.0
             stand_still = 0 # -1.0
             torques = 0 # -0.00001
             collision = 0 # -1.

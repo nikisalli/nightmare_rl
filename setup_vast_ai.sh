@@ -14,15 +14,15 @@ chsh -s /usr/bin/fish
 # install croc
 curl https://getcroc.schollz.com | bash
 
-# install rsl_rl
-git clone https://github.com/leggedrobotics/rsl_rl.git
-cd rsl_rl
-git checkout tags/v1.0.2
-pip install -e .
-cd ..
-
 # git clone https://github.com/nikisalli/nightmare_rl
 cd nightmare_rl
 pip install -r requirements.txt
 pip uninstall -y torch
 pip install torch
+
+# install rsl_rl
+git clone https://github.com/leggedrobotics/rsl_rl.git
+cd rsl_rl
+git checkout tags/v1.0.2
+pip install .
+cd ..
