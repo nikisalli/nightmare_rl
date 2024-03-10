@@ -68,7 +68,7 @@ class MyConfig:
         # distance legs must keep from each other
         LEG_KEEPOUT_RADIUS = 0.03
 
-        STAND_HEIGHT = 5.e-2
+        STAND_HEIGHT = 10.e-2
         SIT_HEIGHT = 0.
 
         ENGINE_FPS = 51
