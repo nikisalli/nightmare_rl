@@ -71,8 +71,8 @@ class NightmareV3Env():
         self.body_contact_force = np.zeros(self.num_envs)
 
         # start from random values in rane 1 to -1
-        self.oscillator_xs = np.random.rand(self.num_envs, self.num_oscillators) * 2 - 1
-        self.oscillator_ys = np.random.rand(self.num_envs, self.num_oscillators) * 2 - 1
+        # self.oscillator_xs = np.random.rand(self.num_envs, self.num_oscillators) * 2 - 1
+        # self.oscillator_ys = np.random.rand(self.num_envs, self.num_oscillators) * 2 - 1
 
         if self.cfg.viewer.render:
             self.viewer = mjv.launch_passive(self.model, self.data[0])
@@ -100,7 +100,7 @@ class NightmareV3Env():
 
         self.dt = self.cfg.env.dt * self.cfg.control.decimation
         self.max_episode_length_s = self.cfg.env.episode_length_s
-        self.max_episode_length = np.ceil(self.max_episode_length_s / (self.dt * self.cfg.control.decimation))
+        self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
 
         self.default_dof_pos = np.array(self.cfg.control.default_pos, dtype=np.float64)
 
@@ -156,24 +156,24 @@ class NightmareV3Env():
         # first 18 actions are for the 18 DoFs
         all_actions = np.array(actions.cpu().numpy()) * self.cfg.control.action_scale
         self.actions = np.array(np.clip(all_actions[:, :18], -clip_actions, clip_actions))[:, :18]
-        self.cpg_actions = np.clip(all_actions[:, 18:], self.cfg.oscillators.min_freq, self.cfg.oscillators.max_freq)
+        # self.cpg_actions = np.clip(all_actions[:, 18:], self.cfg.oscillators.min_freq, self.cfg.oscillators.max_freq)
 
         # divide cpq actions in frequency and phase
-        self.oscillator_freqs = self.cpg_actions[:, :self.num_oscillators]
+        # self.oscillator_freqs = self.cpg_actions[:, :self.num_oscillators]
         # self.oscillator_freqs = np.zeros_like(self.cpg_actions) + 2
         # self.oscillator_phases = self.cpg_actions[:, self.num_oscillators:]
 
         # update oscillators
-        dxs, dys = modified_hopf_oscillator(
-            self.oscillator_xs,
-            self.oscillator_ys,
-            self.cfg.oscillators.a,
-            self.cfg.oscillators.b,
-            self.cfg.oscillators.mu,
-            self.oscillator_freqs
-        )
-        self.oscillator_xs += dxs * 0.01
-        self.oscillator_ys += dys * 0.01
+        # dxs, dys = modified_hopf_oscillator(
+        #     self.oscillator_xs,
+        #     self.oscillator_ys,
+        #     self.cfg.oscillators.a,
+        #     self.cfg.oscillators.b,
+        #     self.cfg.oscillators.mu,
+        #     self.oscillator_freqs
+        # )
+        # self.oscillator_xs += dxs * 0.01
+        # self.oscillator_ys += dys * 0.01
 
         # print("dxs: ", self.oscillator_xs[0][0], "dys: ", self.oscillator_ys[0][0], "freq: ", self.oscillator_freqs[0][0])
 
@@ -303,8 +303,8 @@ class NightmareV3Env():
             (self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos,
             self.dof_vel * self.obs_scales.dof_vel,
             self.actions,
-            self.oscillator_xs,
-            self.oscillator_ys
+            # self.oscillator_xs,
+            # self.oscillator_ys
         ), axis=-1)
         
         # add noise if needed

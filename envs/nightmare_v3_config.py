@@ -9,9 +9,9 @@ class NightmareV3Config(BaseConfig):
         dt = 0.005
         model_path = 'models/nightmare_v3/mjmodel.xml'
         num_envs = 8192
-        num_obs = 68 # 66
+        num_obs = 66
         num_privileged_obs = 0
-        num_actions = 19 # 18
+        num_actions = 18
         episode_length_s = 20
         send_timeouts = True
         body_name = 'base_link'
@@ -26,12 +26,12 @@ class NightmareV3Config(BaseConfig):
         body_max_contact_force = 2.0
         termination_contact_force = 50.0
     
-    class oscillators:
-        a = 1.0
-        b = 1.0
-        mu = 1.0
-        max_freq = 8.0
-        min_freq = 4.0
+    # class oscillators:
+    #     a = 1.0
+    #     b = 1.0
+    #     mu = 1.0
+    #     max_freq = 8.0
+    #     min_freq = 4.0
 
     class viewer:
         render = True
@@ -47,7 +47,7 @@ class NightmareV3Config(BaseConfig):
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0]
-        decimation = 12
+        decimation = 4
         action_scale = 0.2
 
     class noise:
@@ -83,7 +83,7 @@ class NightmareV3Config(BaseConfig):
             termination = -200.0
             tracking_lin_vel = 8.
             tracking_ang_vel = 4.
-            dof_acc = -1e-6
+            dof_acc = -2.5e-5
             action_rate = -0.02
 
             orientation = 0 # -0.05 # -0.
@@ -124,7 +124,7 @@ class NightmareV3ConfigPPO(BaseConfig):
         value_loss_coef = 1.0
         use_clipped_value_loss = True
         clip_param = 0.2
-        entropy_coef = 0.001
+        entropy_coef = 0.0015
         num_learning_epochs = 5
         num_mini_batches = 4 # mini batch size = num_envs*nsteps / nminibatches
         learning_rate = 1.e-3 #5.e-4
@@ -137,7 +137,7 @@ class NightmareV3ConfigPPO(BaseConfig):
     class runner:
         policy_class_name = 'ActorCritic' # 'ActorCriticRecurrent' # 'ActorCriticODE'
         algorithm_class_name = 'PPO'
-        num_steps_per_env = 30 # per iteration
+        num_steps_per_env = 80 # per iteration
         max_iterations = 1000000000 # number of policy updates
 
         # logging
