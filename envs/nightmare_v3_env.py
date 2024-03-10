@@ -482,7 +482,7 @@ class NightmareV3Env():
         # is_command_zero = np.linalg.norm(self.commands[:, :2], axis=1) < 0.05
 
         single_foot_reward = airtime_longer_than_1s * (self.feet_air_time - 1.) + airtime_shorter_than_0_5s * (0.5 - self.feet_air_time)
-        return np.square(np.sum(single_foot_reward, axis=1))
+        return np.sum(np.square(single_foot_reward), axis=1)
     
     def _reward_body_contact_forces(self):
         rew = np.zeros(self.num_envs)
