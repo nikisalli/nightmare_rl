@@ -24,7 +24,7 @@ class NightmareV3Config(BaseConfig):
         tibia_max_contact_force = 2.0
         body_contact_mode = 1
         body_max_contact_force = 2.0
-        termination_contact_force = 50.0
+        termination_contact_force = 80.0
     
     # class oscillators:
     #     a = 1.0
