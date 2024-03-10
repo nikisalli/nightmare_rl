@@ -16,13 +16,13 @@ class NightmareV3Config(BaseConfig):
         send_timeouts = True
         body_name = 'base_link'
         # 0 do nothing, 1 penalize on contact, 2 terminate on contact
-        coxa_contact_mode = 2
+        coxa_contact_mode = 1
         coxa_max_contact_force = 2.0
-        femur_contact_mode = 2
+        femur_contact_mode = 1
         femur_max_contact_force = 2.0
         tibia_contact_mode = 1
         tibia_max_contact_force = 2.0
-        body_contact_mode = 2
+        body_contact_mode = 1
         body_max_contact_force = 2.0
         termination_contact_force = 50.0
     
@@ -85,9 +85,9 @@ class NightmareV3Config(BaseConfig):
             tracking_ang_vel = 4.
             dof_acc = -2.5e-5
             action_rate = -0.02
+            body_contact_forces = -5 # -0.
 
             orientation = 0 # -0.05 # -0.
-            body_contact_forces = 0 # -5 # -0.
             base_height = 0 # -200.0
             feet_contact_forces = 0 # -0.05
             ang_vel_xy = 0 # -0.05
