@@ -88,12 +88,12 @@ class NightmareV3Config(BaseConfig):
             body_contact_forces = -5 # -0.
             feet_air_time = -4.0
             orientation = -5 # -0.
-            base_height = -2000.0
             ang_vel_xy = -5
             lin_vel_z = -2.0
             default_position = -0.01
             torques = -0.00001
 
+            base_height = 0 # -2000.0
             feet_contact_forces = 0 # -0.05
             dof_vel = 0 # -0.001
             stand_still = 0 # -1.0
