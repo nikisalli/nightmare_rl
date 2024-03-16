@@ -64,12 +64,11 @@ cfg = NightmareV3Config()
 train_cfg = NightmareV3ConfigPPO()
 train_cfg_dict = class_to_dict(train_cfg)
 actor_critic_class = eval(train_cfg_dict["runner"]["policy_class_name"])
-nn = actor_critic_class( cfg.env.num_obs,
-                                                cfg.env.num_obs,
-                                                        cfg.env.num_actions,
-                                                        **train_cfg_dict["policy"]).to('cpu')
+nn = actor_critic_class( cfg.env.num_obs, cfg.env.num_obs, cfg.env.num_actions, **train_cfg_dict["policy"]).to('cpu')
 
 model_path = "checkpoints/2024-03-10 02:54:19.368795/model_2000.pt"
+# model_path = "logs/nightmare_v3/2024-03-10 16:14:21.539763/model_1550.pt"
+# model_path = "logs/nightmare_v3/2024-03-10 15:13:33.092631/model_1500.pt"
 nn.load_state_dict(torch.load(model_path)['model_state_dict'])
 nn.eval()
 
@@ -120,9 +119,6 @@ with mj.viewer.launch_passive(model, data) as viewer:
         # clip obs
         clip_obs = cfg.normalization.clip_observations
         obs = np.clip(obs, -clip_obs, clip_obs)
-
-        print(obs)
-        print(default_pos)
 
         actions = nn.act(torch.tensor(obs, dtype=torch.float32))
 
