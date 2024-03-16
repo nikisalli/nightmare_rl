@@ -17,7 +17,8 @@ prevt = time.time()
 # pkl_files = glob.glob('logs/nightmare_v3/2024-03-10 04:27:30.671506/**/*.pkl', recursive=True)
 # pkl_files = glob.glob('logs/nightmare_v3/2024-03-10 10:59:22.341365/**/*.pkl', recursive=True)
 # pkl_files = glob.glob('logs/nightmare_v3/2024-03-10 15:13:33.092631/**/*.pkl', recursive=True)
-pkl_files = glob.glob('logs/nightmare_v3/2024-03-10 16:14:21.539763/**/*.pkl', recursive=True)
+# pkl_files = glob.glob('logs/nightmare_v3/2024-03-10 16:14:21.539763/**/*.pkl', recursive=True)
+pkl_files = glob.glob('logs/nightmare_v3/2024-03-16 14:33:52.968470/**/*.pkl', recursive=True)
 # Sort the file paths alphanumerically
 pkl_files.sort()
 

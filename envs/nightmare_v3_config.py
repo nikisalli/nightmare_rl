@@ -16,15 +16,11 @@ class NightmareV3Config(BaseConfig):
         send_timeouts = True
         body_name = 'base_link'
         # 0 do nothing, 1 penalize on contact, 2 terminate on contact
-        coxa_contact_mode = 1
-        coxa_max_contact_force = 2.0
-        femur_contact_mode = 1
-        femur_max_contact_force = 2.0
         tibia_contact_mode = 1
         tibia_max_contact_force = 2.0
         body_contact_mode = 1
         body_max_contact_force = 2.0
-        termination_contact_force = 80.0
+        termination_contact_force = 160.0
     
     # class oscillators:
     #     a = 1.0
@@ -47,7 +43,7 @@ class NightmareV3Config(BaseConfig):
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0,
                        0, np.pi / 5, 0]
-        decimation = 4
+        decimation = 2
         action_scale = 0.2
 
     class noise:
@@ -82,17 +78,17 @@ class NightmareV3Config(BaseConfig):
         class scales:
             termination = -200.0
             tracking_lin_vel = 8.
-            tracking_ang_vel = 4.
+            tracking_ang_vel = 6.
             dof_acc = -2.5e-5
             action_rate = -0.02
             body_contact_forces = -5 # -0.
-            feet_air_time = -4.0
-            orientation = -5 # -0.
-            ang_vel_xy = -5
-            lin_vel_z = -2.0
             default_position = -0.01
-            torques = -0.00001
+            orientation = -5
 
+            lin_vel_z = 0 # -2.0
+            ang_vel_xy = 0 # -5
+            feet_air_time = 0 # -4.0
+            torques = 0 # -0.00001
             base_height = 0 # -2000.0
             feet_contact_forces = 0 # -0.05
             dof_vel = 0 # -0.001
@@ -109,8 +105,8 @@ class NightmareV3ConfigPPO(BaseConfig):
     runner_class_name = 'OnPolicyRunner'
     class policy:
         init_noise_std = 1.0
-        actor_hidden_dims = [512, 256, 128]
-        critic_hidden_dims = [512, 256, 128]
+        actor_hidden_dims = [54, 42, 30] # [512, 256, 128]
+        critic_hidden_dims = [54, 42, 30] # [512, 256, 128]
         activation = 'elu' # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
         # only for 'ActorCriticRecurrent':
         # rnn_type = 'lstm'

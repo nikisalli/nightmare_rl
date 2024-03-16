@@ -15,7 +15,7 @@ ang_speed = 0.0
 
 prev_time = 0
 
-decimation = 4
+decimation = 2
 action_rate = 0.08
 prev_actions = np.zeros(18)
 
@@ -41,10 +41,9 @@ listener = Listener(on_press=lambda key: on_key_change(key, 1),
                     on_release=lambda key: on_key_change(key, 0))
 listener.start()
 
-# model = mj.load_model_from_path("models/nightmare_v3/mjmodel.xml")
-model = mj.MjModel.from_xml_path("models/nightmare_v3/mjmodel_mjx.xml")
+model = mj.MjModel.from_xml_path("models/nightmare_v3/mjmodel.xml")
+# model = mj.MjModel.from_xml_path("models/nightmare_v3/mjmodel_mjx.xml")
 
-model.opt.timestep = 0.001
 data = mj.MjData(model)
 
 engine = EngineNode()
@@ -71,7 +70,7 @@ with mj.viewer.launch_passive(model, data) as viewer:
         # actions = np.random.uniform(-0.5, 0.5, 18)
         # limit action_rate
         prev_actions += np.clip(actions - prev_actions, -action_rate, action_rate)
-        kp = 20
+        kp = 12
         data.ctrl[:] = (prev_actions - data.qpos[-18:]) * kp
 
         mj.mj_step(model, data, decimation)
@@ -121,16 +120,12 @@ with mj.viewer.launch_passive(model, data) as viewer:
         )
         viewer.user_scn.ngeom = 2
 
-        coxa_contact_forces = data.sensordata[:6].copy()
-        femur_contact_forces = data.sensordata[6:12].copy()
-        tibia_contact_forces = data.sensordata[12:18].copy()
-        feet_contact_forces = data.sensordata[18:24].copy()
+        tibia_contact_forces = data.sensordata[:6].copy()
+        feet_contact_forces = data.sensordata[6:12].copy()
 
         # make tibia contact forces zero if the corresponding foot force is not zero
         # because the tibia site contains the foot site
         tibia_contact_forces *= (feet_contact_forces == 0)
-        print("coxa contact forces: ", coxa_contact_forces)
-        print("femur contact forces: ", femur_contact_forces)
         print("tibia contact forces: ", tibia_contact_forces)
         print("feet contact forces: ", feet_contact_forces)
 

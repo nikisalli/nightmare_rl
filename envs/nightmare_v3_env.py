@@ -65,8 +65,6 @@ class NightmareV3Env():
         self.base_heights = np.zeros(self.num_envs)
 
         self.feet_contact_forces = np.zeros((self.num_envs, 6))
-        self.coxa_contact_forces = np.zeros((self.num_envs, 6))
-        self.femur_contact_forces = np.zeros((self.num_envs, 6))
         self.tibia_contact_forces = np.zeros((self.num_envs, 6))
         self.body_contact_force = np.zeros(self.num_envs)
 
@@ -224,11 +222,9 @@ class NightmareV3Env():
         for env_id in range(self.num_envs): self.dof_vel[env_id] = self.data[env_id].qvel[-18:].copy()
         for env_id in range(self.num_envs): self.torques[env_id] = self.data[env_id].qfrc_applied[-18:].copy()
         for env_id in range(self.num_envs): self.base_heights[env_id] = self.data[env_id].xipos[1][2].copy()
-        for env_id in range(self.num_envs): self.coxa_contact_forces[env_id] = self.data[env_id].sensordata[:6].copy()
-        for env_id in range(self.num_envs): self.femur_contact_forces[env_id] = self.data[env_id].sensordata[6:12].copy()
-        for env_id in range(self.num_envs): self.tibia_contact_forces[env_id] = self.data[env_id].sensordata[12:18].copy()
-        for env_id in range(self.num_envs): self.feet_contact_forces[env_id] = self.data[env_id].sensordata[18:24].copy()
-        for env_id in range(self.num_envs): self.body_contact_force[env_id] = self.data[env_id].sensordata[24].copy()
+        for env_id in range(self.num_envs): self.tibia_contact_forces[env_id] = self.data[env_id].sensordata[:6].copy()
+        for env_id in range(self.num_envs): self.feet_contact_forces[env_id] = self.data[env_id].sensordata[6:12].copy()
+        for env_id in range(self.num_envs): self.body_contact_force[env_id] = self.data[env_id].sensordata[12].copy()
 
         self.dof_acc = (self.dof_vel - prev_dof_vel) / self.dt
 
@@ -250,10 +246,6 @@ class NightmareV3Env():
         # check feet contact forces too high on feet
         self.reset_buf |= self.feet_contact_forces[:, :6].max(axis=1) > self.cfg.env.termination_contact_force
         # check contact forces too high on legs
-        if self.cfg.env.coxa_contact_mode == 2:
-            self.reset_buf |= self.coxa_contact_forces.max(axis=1) > self.cfg.env.coxa_max_contact_force
-        if self.cfg.env.femur_contact_mode == 2:
-            self.reset_buf |= self.femur_contact_forces.max(axis=1) > self.cfg.env.femur_max_contact_force
         if self.cfg.env.tibia_contact_mode == 2:
             self.reset_buf |= self.tibia_contact_forces.max(axis=1) > self.cfg.env.tibia_max_contact_force
         if self.cfg.env.body_contact_mode == 2:
@@ -487,10 +479,6 @@ class NightmareV3Env():
     
     def _reward_body_contact_forces(self):
         rew = np.zeros(self.num_envs)
-        if self.cfg.env.coxa_contact_mode == 1:
-            rew += np.sum(self.coxa_contact_forces, axis=1)
-        if self.cfg.env.femur_contact_mode == 1:
-            rew += np.sum(self.femur_contact_forces, axis=1)
         if self.cfg.env.tibia_contact_mode == 1:
             rew += np.sum(self.tibia_contact_forces, axis=1)
         if self.cfg.env.body_contact_mode == 1:
