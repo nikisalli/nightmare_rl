@@ -12,7 +12,7 @@ sudo apt install -y zstd
 chsh -s /usr/bin/fish
 
 # install croc
-curl https://getcroc.schollz.com | bash
+# curl https://getcroc.schollz.com | bash
 
 # git clone https://github.com/nikisalli/nightmare_rl
 cd nightmare_rl
