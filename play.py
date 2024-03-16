@@ -49,7 +49,6 @@ listener.start()
 # model = mj.load_model_from_path("models/nightmare_v3/mjmodel.xml")
 model = mj.MjModel.from_xml_path("models/nightmare_v3/mjmodel.xml")
 
-model.opt.timestep = 0.005
 data = mj.MjData(model)
 
 print("time step: ", model.opt.timestep)

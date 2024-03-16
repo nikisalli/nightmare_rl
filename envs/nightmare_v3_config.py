@@ -6,7 +6,6 @@ class NightmareV3Config(BaseConfig):
     rl_device = 'cuda'
 
     class env:
-        dt = 0.005
         model_path = 'models/nightmare_v3/mjmodel.xml'
         num_envs = 8192
         num_obs = 66
@@ -60,9 +59,9 @@ class NightmareV3Config(BaseConfig):
     class commands:
         resampling_time = 10
         class ranges:
-            max_lin_vel_x = 0.4
-            max_lin_vel_y = 0.4
-            max_ang_vel = 1.0
+            max_lin_vel_x = 0.5
+            max_lin_vel_y = 0.5
+            max_ang_vel = 0.8
     
     class normalization:
         class obs_scales:
@@ -114,7 +113,7 @@ class NightmareV3ConfigPPO(BaseConfig):
         # rnn_num_layers = 1
         # only for 'ActorCriticODE':
         # dt = NightmareV3Config.env.dt * NightmareV3Config.control.decimation
-        
+
     class algorithm:
         # training params
         value_loss_coef = 1.0

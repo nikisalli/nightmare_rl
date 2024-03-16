@@ -35,7 +35,6 @@ class NightmareV3Env():
         self.num_actions = self.cfg.env.num_actions
 
         self.model = mj.MjModel.from_xml_path(self.cfg.env.model_path)
-        self.model.opt.timestep = self.cfg.env.dt
         self.data = [mj.MjData(self.model) for _ in range(self.num_envs)]
 
         self.num_dof = self.model.nv - 6
@@ -97,7 +96,7 @@ class NightmareV3Env():
         self.actions = np.zeros((self.num_envs, self.num_actions - self.num_oscillators))
         self.limited_actions = np.zeros((self.num_envs, self.num_actions - self.num_oscillators))
 
-        self.dt = self.cfg.env.dt * self.cfg.control.decimation
+        self.dt = self.model.opt.timestep * self.cfg.control.decimation
         self.max_episode_length_s = self.cfg.env.episode_length_s
         self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
 
